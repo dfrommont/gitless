@@ -1,3 +1,5 @@
+This is a fork of the Gitless project, aiming to improve on the work of the many Gitless contributors by adding the following new features: an undo command, tie-in API to another project (start pending completeion of this) to create "runnable" repositories using DevOps tools and a tie-in API to DIT - This authors ongoign project creating a wrapper application controlling automated permission workflows and accessibility modes over Gitless through a wrapper application.
+
 Gitless
 =======
 
