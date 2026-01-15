@@ -96,14 +96,14 @@ def init_repository(url=None, only=None, exclude=None):
       for u in repo["users"]:
         if u.get("username") == Constants.username:
           u["password"] = Constants.password
-          u["account_type"] = Constants.account_type
+          u["account_type"] = Constants.Access_Type.NEW
           break
       else:
         repo["users"].append(
           {
             "username": Constants.username,
             "password": Constants.password,
-            "account_type": Constants.account_type
+            "account_type": Constants.Access_Type.NEW
           }
         )
 
