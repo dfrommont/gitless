@@ -20,6 +20,9 @@ import sys
 import pygit2
 
 from subprocess import run, CalledProcessError
+from pathlib import Path
+
+import Constants
 
 ENCODING = getpreferredencoding() or 'utf-8'
 
@@ -71,6 +74,42 @@ def init_repository(url=None, only=None, exclude=None):
       repo = pygit2.init_repository(cwd)
       # We also create an initial root commit
       git('commit', '--allow-empty', '-m', 'Initialize repository')
+
+      # new repo state -> need to create an empty permission file for the repo and current user then push that
+      json_path = Constants.CONFIG_PATH + "/" + os.path.basename(repo.path) + ".json"
+      repo_name = os.path.basename(repo.path)
+      json_path.parent.mkdir(parents=True, exist_ok=True)
+
+      if json_path.exists():
+        with json_path.open("r", encoding='utf-8') as f:
+          data = json.load(f)
+      else:
+        data = {"settings": []}
+
+      for r in data["settings"]:
+        if r.get("repo_name") == repo_name:
+          break
+      else:
+        repo = {"repo_name": repo_name, "users": []}
+        data["settings"].append(repo)
+
+      for u in repo["users"]:
+        if u.get("username") == Constants.username:
+          u["password"] = Constants.password
+          u["account_type"] = Constants.account_type
+          break
+      else:
+        repo["users"].append(
+          {
+            "username": Constants.username,
+            "password": Constants.password,
+            "account_type": Constants.account_type
+          }
+        )
+
+      with json_path.open("w", encoding='utf-8') as f:
+        json.dump(data, f, indent=2, sort_keys=True)
+
       return repo
 
     try:
