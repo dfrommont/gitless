@@ -43,6 +43,8 @@ try:
         repo.config['color.ui'] in ['no', 'never'])
 except (core.NotInRepoError, KeyError):
   pass
+username = ""
+password = ""
 
 
 def print_help(parser):
@@ -89,6 +91,15 @@ def setup_windows_console():
     kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
 def main():
+  print("We are running the dev version!\n")
+  print(f"Git Repo: {repo.git_repo}")
+  print(f"Remote: {repo.remotes}")
+  print(f"Path: {repo.path}")
+  print(f"Root: {repo.root}")
+  print(f"Config: {repo.config}")
+  #first things first, go off and get the permissions file
+  #have them log in
+  #boom we have username, permission and repo
   sub_cmds = [
       gl_track, gl_untrack, gl_status, gl_diff, gl_commit, gl_branch, gl_tag,
       gl_checkout, gl_merge, gl_resolve, gl_fuse, gl_remote, gl_publish,
