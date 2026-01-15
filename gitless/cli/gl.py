@@ -10,7 +10,11 @@ import argparse
 import argcomplete
 import traceback
 import pygit2
+import os
+import subprocess
+import json
 
+from pathlib import Path
 from subprocess import CalledProcessError
 
 from gitless import core
@@ -21,6 +25,7 @@ from . import (
     gl_switch, gl_init, gl_history)
 from . import pprint
 from . import helpers
+from enum import Enum
 
 
 SUCCESS = 0
@@ -31,6 +36,9 @@ NOT_IN_GL_REPO = 4
 
 __version__ = '0.8.8'
 URL = 'http://gitless.com'
+
+CONFIG_PATH = Path("/home/vboxuser/DIT/Dit2.0_Config")
+CONFIG_PATH_REPO_URL = "https://github.com/dfrommont/Dit2.0_Config"
 
 
 repo = None
@@ -43,9 +51,104 @@ try:
         repo.config['color.ui'] in ['no', 'never'])
 except (core.NotInRepoError, KeyError):
   pass
+
 username = ""
 password = ""
 
+class Access_Type(Enum):
+  NONE = 0
+  NEW = 1
+  NOVICE = 2
+  EXPERT = 3
+
+  def Parse(t: str) -> Enum:
+    if t == "New" or t == "NEW":
+      return Access_Type.NEW
+    elif t == "Novice" or t == "novice":
+      return Access_Type.NOVICE
+    elif t == "Expert" or t == "expert":
+      return Access_Type.EXPERT
+    else:
+      return Access_Type.NONE 
+    
+  def Parse(i: int) -> Enum:
+    if i == 1:
+      return Access_Type.NEW
+    elif i == 2:
+      return Access_Type.NOVICE
+    elif i == 3:
+      return Access_Type.EXPERT
+    else:
+      return Access_Type.NONE 
+
+
+access_level = Access_Type.NONE
+
+def run(cmd, cwd=None):
+  result = subprocess.run(
+    cmd,
+    cwd=cwd,
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+    shell=True
+  )
+  return result.returncode == 0
+
+def sync_repo_permissions(repo_name) -> bool:
+  if not CONFIG_PATH.exists() or not CONFIG_PATH.is_dir():
+    print(f"Config path {CONFIG_PATH} does not exist or is not a directory!")
+
+    if not run(f"git clone {CONFIG_PATH_REPO_URL} \"{CONFIG_PATH}\""):
+      print("Failed to close config repository!")
+      return False
+  
+  if not run("git fetch --quiet", cwd=CONFIG_PATH):
+    print("Failed to fetch updates to config repository!")
+    return False
+  
+  result = subprocess.run(
+    f"git status --porcelain {repo_name}.json",
+    cwd=CONFIG_PATH,
+    shell=True,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.DEVNULL,
+    text=True
+  )
+
+  if result.stdout.strip():
+    if not run(
+      f"git add {repo_name}.json && git commit -m \"Update permissions\" --quiet",
+      cwd=CONFIG_PATH
+    ):
+      print(f"Failed to commit changes to {repo_name}.json")
+      return False
+    
+  result = subprocess.run(
+    "git rev-list --left-reight --count HEAD..@{u}",
+    cwd=CONFIG_PATH,
+    shell=True,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.DEVNULL,
+    text=True
+  )
+
+  if result.returncode != 0:
+    print("Failed to get git sync state!")
+    return False
+  
+  behind, ahead = map(int, result.stdout.strip().split())
+
+  if behind > 0:
+    if not run("git pull --rebase --quiet", cwd=CONFIG_PATH):
+      print("Failed to pull updates for config repository!")
+      return False
+    
+  if ahead > 0:
+    if not run("git push --quiet", cwd=CONFIG_PATH):
+      print("Failed to push update for config repository!")
+      return False
+      
+  return True
 
 def print_help(parser):
   """print help for humans"""
@@ -90,16 +193,45 @@ def setup_windows_console():
     kernel32 = ctypes.windll.kernel32
     kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
+def verify_access(json_path: Path, permission_file_name: str, username: str, password: str) -> Access_Type:
+  with json_path.open("r", encoding='utf-8') as f:
+    data = json.load(f)
+    for repo in data.get("settings", []):
+      if repo.get("repo_name") != permission_file_name:
+        continue
+      for user in repo.get("users", []):
+        if user.get("username") != username:
+          continue
+        if user.get("password") == password:
+          return Access_Type.Parse(user.get("account_type"))
+        return Access_Type.NONE
+      return Access_Type.NONE
+    return Access_Type.NONE
+
 def main():
-  print("We are running the dev version!\n")
-  print(f"Git Repo: {repo.git_repo}")
-  print(f"Remote: {repo.remotes}")
-  print(f"Path: {repo.path}")
-  print(f"Root: {repo.root}")
-  print(f"Config: {repo.config}")
+  #print("We are running the dev version!\n")
+  #print(f"Git Repo: {repo.git_repo}")
+  #print(f"Remote: {repo.remotes}")
+  #print(f"Path: {repo.path}")
+  #print(f"Root: {repo.root}")
+  #print(f"Config: {repo.config}")
   #first things first, go off and get the permissions file
   #have them log in
   #boom we have username, permission and repo
+
+  if repo:
+    permission_file_name = os.path.basename(repo.root)+".json"
+    if not sync_repo_permissions(permission_file_name):
+      print("The repo failed to update it's permissions from the config server!")
+      exit
+    else:
+      username = input("Username: ")
+      password = input("Password: ")
+      access_level = verify_access(CONFIG_PATH + "/" + permission_file_name, permission_file_name, username, password)
+      if access_level == Access_Type.NONE:
+        print("You do not have permission to access this repo!")
+        exit
+    
   sub_cmds = [
       gl_track, gl_untrack, gl_status, gl_diff, gl_commit, gl_branch, gl_tag,
       gl_checkout, gl_merge, gl_resolve, gl_fuse, gl_remote, gl_publish,
