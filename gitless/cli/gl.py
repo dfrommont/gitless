@@ -21,12 +21,12 @@ from gitless import core
 from . import (
     gl_track, gl_untrack, gl_status, gl_diff, gl_commit, gl_branch, gl_tag,
     gl_checkout, gl_merge, gl_resolve, gl_fuse, gl_remote, gl_publish,
-    gl_switch, gl_init, gl_history)
+    gl_switch, gl_init, gl_history, gl_permission)
 from . import pprint
 from . import helpers
 from enum import Enum
 
-import Constants
+from .. import Constants
 
 
 SUCCESS = 0
@@ -116,19 +116,19 @@ def main():
     permission_file_name = os.path.basename(repo.root)+".json"
     if not Constants.sync_repo_permissions(permission_file_name):
       print("The repo failed to update it's permissions from the config server!")
-      exit
+      quit()
     else:
       Constants.username = input("Username: ")
       Constants.password = input("Password: ")
-      Constants.access_level = verify_access(Constants.CONFIG_PATH + "/" + permission_file_name, permission_file_name, Constants.username, Constants.password)
+      Constants.access_level = verify_access(str(Constants.CONFIG_PATH)+ "/" + permission_file_name, permission_file_name, Constants.username, Constants.password)
       if Constants.access_level == Constants.Access_Type.NONE:
         print("You do not have permission to access this repo!")
-        exit
+        quit()
     
   sub_cmds = [
       gl_track, gl_untrack, gl_status, gl_diff, gl_commit, gl_branch, gl_tag,
       gl_checkout, gl_merge, gl_resolve, gl_fuse, gl_remote, gl_publish,
-      gl_switch, gl_init, gl_history]
+      gl_switch, gl_init, gl_history, gl_permission]
 
   parser = build_parser(sub_cmds, repo)
   argcomplete.autocomplete(parser)

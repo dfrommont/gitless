@@ -22,7 +22,7 @@ import pygit2
 from subprocess import run, CalledProcessError
 from pathlib import Path
 
-import Constants
+from . import Constants
 
 ENCODING = getpreferredencoding() or 'utf-8'
 
@@ -76,7 +76,7 @@ def init_repository(url=None, only=None, exclude=None):
       git('commit', '--allow-empty', '-m', 'Initialize repository')
 
       # new repo state -> need to create an empty permission file for the repo and current user then push that
-      json_path = Constants.CONFIG_PATH + "/" + os.path.basename(repo.path) + ".json"
+      json_path = str(Constants.CONFIG_PATH) + "/" + os.path.basename(repo.path) + ".json"
       repo_name = os.path.basename(repo.path)
       json_path.parent.mkdir(parents=True, exist_ok=True)
 

@@ -33,6 +33,27 @@ class Access_Type(Enum):
       return Access_Type.EXPERT
     else:
       return Access_Type.NONE 
+    
+  def Serialise(a: Enum) -> int:
+    if a == Access_Type.NEW:
+      return Access_Type.NEW.value
+    elif a == Access_Type.NOVICE:
+      return Access_Type.NOVICE.value
+    elif a == Access_Type.EXPERT:
+      return Access_Type.EXPERT.value
+    else:
+      return Access_Type.NONE.value
+    
+  def Serialise(t: str) -> int:
+    if t == "New" or t == "NEW":
+      return Access_Type.NEW.value
+    elif t == "Novice" or t == "novice":
+      return Access_Type.NOVICE.value
+    elif t == "Expert" or t == "expert":
+      return Access_Type.EXPERT.value
+    else:
+      return Access_Type.NONE.value
+    
 
 
 access_level = Access_Type.NONE
