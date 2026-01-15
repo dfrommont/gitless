@@ -185,10 +185,10 @@ def main():
       print("The repo failed to update it's permissions from the config server!")
       exit
     else:
-      username = input("Username: ")
-      password = input("Password: ")
-      access_level = verify_access(Constants.CONFIG_PATH + "/" + permission_file_name, permission_file_name, username, password)
-      if access_level == Constants.Access_Type.NONE:
+      Constants.username = input("Username: ")
+      Constants.password = input("Password: ")
+      Constants.access_level = verify_access(Constants.CONFIG_PATH + "/" + permission_file_name, permission_file_name, Constants.username, Constants.password)
+      if Constants.access_level == Constants.Access_Type.NONE:
         print("You do not have permission to access this repo!")
         exit
     
