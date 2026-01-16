@@ -90,6 +90,6 @@ def main(args, repo):
 
             break
 
-    return Constants.sync_repo_permissions(repo_name)
+    return Constants.sync_repo_permissions(repo_name + ".json")
 
 

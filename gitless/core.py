@@ -75,16 +75,22 @@ def init_repository(url=None, only=None, exclude=None):
       # We also create an initial root commit
       git('commit', '--allow-empty', '-m', 'Initialize repository')
 
-      # new repo state -> need to create an empty permission file for the repo and current user then push that
-      json_path = str(Constants.CONFIG_PATH) + "/" + os.path.basename(repo.path) + ".json"
-      repo_name = os.path.basename(repo.path)
-      json_path.parent.mkdir(parents=True, exist_ok=True)
+      print("Generating DIT settings file for repo...")
 
-      if json_path.exists():
-        with json_path.open("r", encoding='utf-8') as f:
-          data = json.load(f)
+      # new repo state -> need to create an empty permission file for the repo and current user then push that
+      repo_name = Path(repo.path).parent.name
+      json_path = str(Constants.CONFIG_PATH) + "/" + repo_name + ".json"
+      Constants.CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+      if Constants.CONFIG_PATH.exists():
+        if Path(json_path).exists():
+          with Path(json_path).open("r", encoding='utf-8') as f:
+            data = json.load(f)
+        else:
+          data = {"settings": []}
       else:
-        data = {"settings": []}
+        print("Cannot make permission file as your gitless has not yet made contact with your DIT config server!")
+        return None
 
       for r in data["settings"]:
         if r.get("repo_name") == repo_name:
@@ -94,21 +100,30 @@ def init_repository(url=None, only=None, exclude=None):
         data["settings"].append(repo)
 
       for u in repo["users"]:
+        print(f"yall getting: {Constants.Access_Type.NEW.Serialise}")
         if u.get("username") == Constants.username:
           u["password"] = Constants.password
-          u["account_type"] = Constants.Access_Type.NEW
+          u["account_type"] = Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
           break
       else:
+        print(f"yall getting: {Constants.Access_Type.NEW.Serialise}")
         repo["users"].append(
           {
             "username": Constants.username,
             "password": Constants.password,
-            "account_type": Constants.Access_Type.NEW
+            "account_type": Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
           }
         )
 
-      with json_path.open("w", encoding='utf-8') as f:
+      with Path(json_path).open("w", encoding='utf-8') as f:
+        print(data)
         json.dump(data, f, indent=2, sort_keys=True)
+
+      print(f"...Done and available at: {json_path}")
+
+      print("The path to the config folder we shall now be syncing")
+      print(repo_name + ".json")
+      Constants.sync_repo_permissions(repo_name + ".json")
 
       return repo
 
@@ -130,6 +145,12 @@ def init_repository(url=None, only=None, exclude=None):
         continue
       new_b = repo.create_branch(rb.branch_name, rb.head)
       new_b.upstream = rb
+
+    #before this can finish, we need to check in with the config server and get the permission file link established
+    print("The path to the config folder we shall now be syncing")
+    print(Path(repo.path).parent.name)
+    Constants.sync_repo_permissions(Path(repo.path).parent.name)
+
     return repo
 
 

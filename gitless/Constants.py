@@ -14,7 +14,8 @@ class Access_Type(Enum):
   NOVICE = 2
   EXPERT = 3
 
-  def Parse(t: str) -> Enum:
+  @staticmethod
+  def Parse(t: str) -> "Access_Type":
     if t == "New" or t == "NEW":
       return Access_Type.NEW
     elif t == "Novice" or t == "novice":
@@ -24,7 +25,8 @@ class Access_Type(Enum):
     else:
       return Access_Type.NONE 
     
-  def Parse(i: int) -> Enum:
+  @staticmethod 
+  def Parse(i: int) -> "Access_Type":
     if i == 1:
       return Access_Type.NEW
     elif i == 2:
@@ -34,27 +36,9 @@ class Access_Type(Enum):
     else:
       return Access_Type.NONE 
     
-  def Serialise(a: Enum) -> int:
-    if a == Access_Type.NEW:
-      return Access_Type.NEW.value
-    elif a == Access_Type.NOVICE:
-      return Access_Type.NOVICE.value
-    elif a == Access_Type.EXPERT:
-      return Access_Type.EXPERT.value
-    else:
-      return Access_Type.NONE.value
-    
-  def Serialise(t: str) -> int:
-    if t == "New" or t == "NEW":
-      return Access_Type.NEW.value
-    elif t == "Novice" or t == "novice":
-      return Access_Type.NOVICE.value
-    elif t == "Expert" or t == "expert":
-      return Access_Type.EXPERT.value
-    else:
-      return Access_Type.NONE.value
-    
-
+  @staticmethod 
+  def Serialise(self) -> int:
+      return self.value
 
 access_level = Access_Type.NONE
 
@@ -68,58 +52,68 @@ def run(cmd, cwd=None):
   )
   return result.returncode == 0
 
-def sync_repo_permissions(repo_name) -> bool:
-  if not CONFIG_PATH.exists() or not CONFIG_PATH.is_dir():
-    print(f"Config path {CONFIG_PATH} does not exist or is not a directory!")
+def sync_repo_permissions(file_name: str) -> bool:
+    if not CONFIG_PATH.exists() or not CONFIG_PATH.is_dir():
+        print(f"Config path {CONFIG_PATH} does not exist or is not a directory!")
 
-    if not run(f"git clone {CONFIG_PATH_REPO_URL} \"{CONFIG_PATH}\""):
-      print("Failed to close config repository!")
-      return False
-  
-  if not run("git fetch --quiet", cwd=CONFIG_PATH):
-    print("Failed to fetch updates to config repository!")
-    return False
-  
-  result = subprocess.run(
-    f"git status --porcelain {repo_name}.json",
-    cwd=CONFIG_PATH,
-    shell=True,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.DEVNULL,
-    text=True
-  )
+        if not run(f"git clone {CONFIG_PATH_REPO_URL} \"{CONFIG_PATH}\""):
+            print("Failed to clone config repository!")
+            return False
 
-  if result.stdout.strip():
-    if not run(
-      f"git add {repo_name}.json && git commit -m \"Update permissions\" --quiet",
-      cwd=CONFIG_PATH
-    ):
-      print(f"Failed to commit changes to {repo_name}.json")
-      return False
-    
-  result = subprocess.run(
-    "git rev-list --left-reight --count HEAD..@{u}",
-    cwd=CONFIG_PATH,
-    shell=True,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.DEVNULL,
-    text=True
-  )
+    if not run("git fetch --quiet", cwd=CONFIG_PATH):
+        print("Failed to fetch updates for config repository!")
+        return False
 
-  if result.returncode != 0:
-    print("Failed to get git sync state!")
-    return False
-  
-  behind, ahead = map(int, result.stdout.strip().split())
+    result = subprocess.run(
+        f"git status --porcelain {file_name}",
+        cwd=CONFIG_PATH,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
 
-  if behind > 0:
-    if not run("git pull --rebase --quiet", cwd=CONFIG_PATH):
-      print("Failed to pull updates for config repository!")
-      return False
-    
-  if ahead > 0:
-    if not run("git push --quiet", cwd=CONFIG_PATH):
-      print("Failed to push update for config repository!")
-      return False
-      
-  return True
+    if result.stdout.strip():
+        if not run(
+            f"git add {file_name} && git commit -m \"Updated permissions\"",
+            cwd=CONFIG_PATH
+        ):
+            print("Failed to commit changes!")
+            return False
+
+    upstream = subprocess.run(
+        "git rev-parse --abbrev-ref --symbolic-full-name @{u}",
+        cwd=CONFIG_PATH,
+        shell=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    if upstream.returncode != 0:
+        if not run("git push -u origin HEAD", cwd=CONFIG_PATH):
+            print("Failed to set upstream branch!")
+            return False
+        return True
+
+    result = subprocess.run(
+        "git rev-list --left-right --count HEAD...@{u}",
+        cwd=CONFIG_PATH,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    ahead, behind = map(int, result.stdout.strip().split())
+
+    if behind > 0:
+        if not run("git pull --rebase --quiet", cwd=CONFIG_PATH):
+            print("Failed to pull updates!")
+            return False
+
+    if ahead > 0:
+        if not run("git push --quiet", cwd=CONFIG_PATH):
+            print("Failed to push updates!")
+            return False
+
+    return True

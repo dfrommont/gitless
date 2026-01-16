@@ -93,8 +93,13 @@ def setup_windows_console():
     kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
 def verify_access(json_path: Path, permission_file_name: str, username: str, password: str) -> Constants.Access_Type:
-  with json_path.open("r", encoding='utf-8') as f:
+  print(f"path: {json_path}")
+  print(f"permission_file_name: {permission_file_name}")
+  print(f"username: {username}")
+  print(f"password: {password}")
+  with Path(json_path).open("r", encoding='utf-8') as f:
     data = json.load(f)
+    print("file exists")
     for repo in data.get("settings", []):
       if repo.get("repo_name") != permission_file_name:
         continue
@@ -102,8 +107,11 @@ def verify_access(json_path: Path, permission_file_name: str, username: str, pas
         if user.get("username") != username:
           continue
         if user.get("password") == password:
+          print("correct password, it's a enum thing")
           return Constants.Access_Type.Parse(user.get("account_type"))
+        print("wrong password")
         return Constants.Access_Type.NONE
+      print("user not existy")
       return Constants.Access_Type.NONE
     return Constants.Access_Type.NONE
 
@@ -112,18 +120,8 @@ def main():
   #have them log in
   #boom we have username, permission and repo
 
-  if repo:
-    permission_file_name = os.path.basename(repo.root)+".json"
-    if not Constants.sync_repo_permissions(permission_file_name):
-      print("The repo failed to update it's permissions from the config server!")
-      quit()
-    else:
-      Constants.username = input("Username: ")
-      Constants.password = input("Password: ")
-      Constants.access_level = verify_access(str(Constants.CONFIG_PATH)+ "/" + permission_file_name, permission_file_name, Constants.username, Constants.password)
-      if Constants.access_level == Constants.Access_Type.NONE:
-        print("You do not have permission to access this repo!")
-        quit()
+  Constants.username = input("Username: ")
+  Constants.password = input("Password: ")
     
   sub_cmds = [
       gl_track, gl_untrack, gl_status, gl_diff, gl_commit, gl_branch, gl_tag,
@@ -138,6 +136,17 @@ def main():
 
   args = parser.parse_args()
   try:
+    if args.subcmd_name != 'init' and repo:
+      permission_file_name = os.path.basename(repo.root)+".json"
+      print(permission_file_name)
+      if not Constants.sync_repo_permissions(permission_file_name):
+        print("The repo failed to update it's permissions from the config server!")
+        quit()
+      else:
+        Constants.access_level = verify_access(str(Constants.CONFIG_PATH)+ "/" + permission_file_name, os.path.basename(repo.root), Constants.username, Constants.password)
+        if Constants.access_level == Constants.Access_Type.NONE:
+          print("You do not have permission to access this repo!")
+          quit()
     if args.subcmd_name != 'init' and not repo:
       raise core.NotInRepoError('You are not in a Gitless\'s repository')
 
