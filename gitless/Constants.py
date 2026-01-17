@@ -42,25 +42,36 @@ class Access_Type(Enum):
 
 access_level = Access_Type.NONE
 
-def run(cmd, cwd=None):
+def run(cmd, cwd=None, capture=False):
   result = subprocess.run(
     cmd,
     cwd=cwd,
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL,
-    shell=True
+    stdout=subprocess.PIPE if capture else subprocess.DEVNULL,
+    stderr=subprocess.PIPE if capture else subprocess.DEVNULL,
+    shell=True,
+    text=True
   )
   return result.returncode == 0
+
+def _run(cmd, cwd=None, capture=False):
+  return subprocess.run(
+    cmd,
+    cwd=cwd,
+    stdout=subprocess.PIPE if capture else subprocess.DEVNULL,
+    stderr=subprocess.PIPE if capture else subprocess.DEVNULL,
+    shell=True,
+    text=True
+  )
 
 def sync_repo_permissions(file_name: str) -> bool:
     if not CONFIG_PATH.exists() or not CONFIG_PATH.is_dir():
         print(f"Config path {CONFIG_PATH} does not exist or is not a directory!")
 
-        if not run(f"git clone {CONFIG_PATH_REPO_URL} \"{CONFIG_PATH}\""):
+        if not run(f"git clone {CONFIG_PATH_REPO_URL} \"{CONFIG_PATH}\"", cwd=None, capture=True):
             print("Failed to clone config repository!")
             return False
 
-    if not run("git fetch --quiet", cwd=CONFIG_PATH):
+    if not run("git fetch --quiet", cwd=CONFIG_PATH, capture=True):
         print("Failed to fetch updates for config repository!")
         return False
 
@@ -76,7 +87,7 @@ def sync_repo_permissions(file_name: str) -> bool:
     if result.stdout.strip():
         if not run(
             f"git add {file_name} && git commit -m \"Updated permissions\"",
-            cwd=CONFIG_PATH
+            cwd=CONFIG_PATH, capture=True
         ):
             print("Failed to commit changes!")
             return False
