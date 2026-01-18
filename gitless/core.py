@@ -160,8 +160,13 @@ def init_repository(url=None, only=None, exclude=None):
       else:
         data = {"settings": []}
     else:
-      print("Cannot make permission file as your gitless has not yet made contact with your DIT config server!")
-      return None
+      print("Establishing connection to DIT config server!")
+      Constants.sync_repo_permissions(json_path)
+      if Path(json_path).exists():
+        with Path(json_path).open("r", encoding='utf-8') as f:
+          data = json.load(f)
+      else:
+        data = {"settings": []}
 
     for r in data["settings"]:
       if r.get("repo_name") == repo_name:
