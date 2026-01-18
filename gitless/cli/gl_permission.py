@@ -22,7 +22,7 @@ def parser(subparsers, repo):
         'Use the -a to add new users by username, -e to edit the access level of a username and -d to remove users from the repository'),
         aliases=['perm'])
   permission_parser.add_argument(
-    '-a', '--add', nargs='+', help=('add new user by username to the repository (access level defaults to NEW) - format username/password')
+    '-a', '--add', nargs='+', help=('add new user by username to the repository (access level defaults to NEW) - format username/access_level')
   )
   permission_parser.add_argument(
     '-e', '--edit', nargs='+', help=('set the access level of a given username to a new value')
@@ -56,17 +56,16 @@ def main(args, repo):
                 print(add)
                 creds = [tuple(entry.split('/', 1)) for entry in add]
                 print(creds)
-                users = [(u.get("username"), u.get("password")) for u in r["users"]]
+                users = [(u.get("username"), u.get("account_type")) for u in r["users"]]
                 print(users)
                 to_add = list(set(creds) - set(users))
                 print(to_add)
                 print("3")
-                for username, password in to_add:
+                for username, access_level in to_add:
                     r["users"].append(
                         {
                             "username": username,
-                            "password": password,
-                            "account_type": Constants.Access_Type.Serialise(Constants.Access_Type.NEW)
+                            "account_type": Constants.Access_Type.Serialise(access_level)
                         }
                     )
 

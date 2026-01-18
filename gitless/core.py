@@ -65,6 +65,7 @@ def init_repository(url=None, only=None, exclude=None):
     exclude: if given, and only is not given, this local repository will
       consistent of all branches not in this set
   """
+  Constants.username = input("Username: ")
   cwd = os.getcwd()
   try:
     error_on_none(pygit2.discover_repository(cwd))
@@ -102,7 +103,6 @@ def init_repository(url=None, only=None, exclude=None):
       for u in repo["users"]:
         print(f"yall getting: {Constants.Access_Type.NEW.Serialise}")
         if u.get("username") == Constants.username:
-          u["password"] = Constants.password
           u["account_type"] = Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
           break
       else:
@@ -110,7 +110,6 @@ def init_repository(url=None, only=None, exclude=None):
         repo["users"].append(
           {
             "username": Constants.username,
-            "password": Constants.password,
             "account_type": Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
           }
         )
@@ -118,6 +117,10 @@ def init_repository(url=None, only=None, exclude=None):
       with Path(json_path).open("w", encoding='utf-8') as f:
         print(data)
         json.dump(data, f, indent=2, sort_keys=True)
+
+      with Path(repo.path.parent + "/../.git/dit_config.json").open("w", encoding='utf-8') as f:
+        info = {"this_user":{"username": Constants.username, "account_type": Constants.Access_Type.NEW.Serialise(Constants.access_level)}}
+        json.dump(info, f, indent=2, sort_keys=True)
 
       print(f"...Done and available at: {json_path}")
 
@@ -178,7 +181,6 @@ def init_repository(url=None, only=None, exclude=None):
     for u in r["users"]:
       print(f"yall getting: {Constants.Access_Type.NEW.Serialise}")
       if u.get("username") == Constants.username:
-        u["password"] = Constants.password
         u["account_type"] = Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
         break
     else:
@@ -186,7 +188,6 @@ def init_repository(url=None, only=None, exclude=None):
       r["users"].append(
         {
           "username": Constants.username,
-          "password": Constants.password,
           "account_type": Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
         }
       )
@@ -194,6 +195,11 @@ def init_repository(url=None, only=None, exclude=None):
     with Path(json_path).open("w", encoding='utf-8') as f:
       print(data)
       json.dump(data, f, indent=2, sort_keys=True)
+
+    config_path = str(Path(repo.path).parent) + "/.git/dit_config.json"
+    with Path(config_path).open("w", encoding='utf-8') as f:
+      info = {"this_user":{"username": Constants.username, "account_type": Constants.Access_Type.NEW.Serialise(Constants.access_level.NEW)}}
+      json.dump(info, f, indent=2, sort_keys=True)
 
     print(f"...Done and available at: {json_path}")
 

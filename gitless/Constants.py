@@ -6,7 +6,6 @@ CONFIG_PATH = Path("/home/vboxuser/DIT/Dit2.0_Config")
 CONFIG_PATH_REPO_URL = "https://github.com/dfrommont/Dit2.0_Config"
 
 username = ""
-password = ""
 
 class Access_Type(Enum):
   NONE = 0
