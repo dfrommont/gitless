@@ -1,0 +1,81 @@
+# -*- coding: utf-8 -*-
+# Gitless - a version control system built on top of Git
+# Licensed under MIT
+
+"""gl home - List project readme, location to ground the user."""
+
+from .. import Constants
+import os
+import json
+from pathlib import Path
+
+from gitless import core
+
+from . import helpers, pprint
+
+
+def parser(subparsers, repo):
+  desc = 'List the base location of the project on your system, display the readme and list who is using the project'
+  permission_parser = subparsers.add_parser(
+      'home', help=desc, description=(
+        desc.capitalize()),
+        aliases=['home'])
+  permission_parser.set_defaults(func=main)
+
+
+def main(args, repo):
+
+    #list out the base path
+    #the location of the config file
+    #List the levels of people in the project
+    #Print out the readme
+
+    pprint.sep()
+
+    pprint.blank(f"Repo Location: {repo.root}")
+    pprint.blank(f"Config file location: {str(Constants.CONFIG_PATH) + "/" + repo.root + ".json"}\n")
+
+    pprint.sep()
+
+    if Path(repo.root).exists():
+        if Path(str(Path(repo.root)+"/readme.md")).exists():
+            name = "readme.md"
+        elif Path(str(Path(repo.root)+"/Readme.md")).exists():
+            name = "Readme.md"
+        elif Path(str(Path(repo.root)+"/README.md")).exists():
+            name = "README.md"
+        elif Path(str(Path(repo.root)+"/readme.txt")).exists():
+            name = "readme.txt"
+        elif Path(str(Path(repo.root)+"/Readme.txt")).exists():
+            name = "Readme.txt"
+        elif Path(str(Path(repo.root)+"/README.txt")).exists():
+            name = "README.txt"
+        else:
+            pprint.err("You have no locatable readme at your project root, it is highly recommended you create this")
+
+        if name: 
+            with Path(str(Path(repo.root)+"/"+name)).open("r", encoding='utf-8') as f:
+                pprint.blank(f.read())
+    
+    pprint.sep()
+
+    pprint.blank("Who has access to this repo?\n")
+
+    repo_name = os.path.basename(repo.root)
+    json_path = str(Constants.CONFIG_PATH) + "/" + repo_name + ".json"
+    print(json_path)
+    Constants.CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    if Constants.CONFIG_PATH.exists():
+        with Path(json_path).open("r", encoding='utf-8') as f:
+            data = json.load(f)
+    else:
+        pprint.err("An error occurred, I could not find your project config file!")
+
+    if data:
+        for u in data["users"]:
+            pprint.blank(u.get("username") + " - " + u.get("account-type"))
+
+    pprint.sep()
+
+    return True

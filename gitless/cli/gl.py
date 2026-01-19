@@ -123,15 +123,17 @@ def main():
     print_help(parser)
     return SUCCESS
 
-
   args = parser.parse_args()
   try:
     if args.subcmd_name != 'init' and repo:
       with Path(repo.path + "/dit_config.json").open("r", encoding='utf-8') as f:
         d = json.load(f)
         u = d["this_user"]
+        m = d["this_machine"]
         Constants.username = u.get("username")
         Constants.access_level = Constants.Access_Type.Parse(u.get("account_type"))
+        Constants.CONFIG_PATH = d.get("CONFIG_PATH")
+        Constants.CONFIG_PATH_REPO_URL = d.get("CONFIG_PATH_REPO_URL")
 
       permission_file_name = os.path.basename(repo.root)+".json"
       print(permission_file_name)
