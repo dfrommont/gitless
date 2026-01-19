@@ -32,50 +32,60 @@ def main(args, repo):
 
     pprint.sep()
 
-    pprint.blank(f"Repo Location: {repo.root}")
-    pprint.blank(f"Config file location: {str(Constants.CONFIG_PATH) + "/" + repo.root + ".json"}\n")
+    print(f"Repo Location: {repo.root}")
+    print(f"Config file location: {str(Constants.CONFIG_PATH) + "/" + repo.root + ".json"}\n")
 
     pprint.sep()
 
     if Path(repo.root).exists():
-        if Path(str(Path(repo.root)+"/readme.md")).exists():
+        if Path(str(Path(repo.root))+"/readme.md").exists():
             name = "readme.md"
-        elif Path(str(Path(repo.root)+"/Readme.md")).exists():
+        elif Path(str(Path(repo.root))+"/Readme.md").exists():
             name = "Readme.md"
-        elif Path(str(Path(repo.root)+"/README.md")).exists():
+        elif Path(str(Path(repo.root))+"/README.md").exists():
             name = "README.md"
-        elif Path(str(Path(repo.root)+"/readme.txt")).exists():
+        elif Path(str(Path(repo.root))+"/readme.txt").exists():
             name = "readme.txt"
-        elif Path(str(Path(repo.root)+"/Readme.txt")).exists():
+        elif Path(str(Path(repo.root))+"/Readme.txt").exists():
             name = "Readme.txt"
-        elif Path(str(Path(repo.root)+"/README.txt")).exists():
+        elif Path(str(Path(repo.root))+"/README.txt").exists():
             name = "README.txt"
         else:
             pprint.err("You have no locatable readme at your project root, it is highly recommended you create this")
 
         if name: 
-            with Path(str(Path(repo.root)+"/"+name)).open("r", encoding='utf-8') as f:
-                pprint.blank(f.read())
+            with Path(str(Path(repo.root))+"/"+name).open("r", encoding='utf-8') as f:
+                print(f.read())
     
     pprint.sep()
 
-    pprint.blank("Who has access to this repo?\n")
+    print("Who has access to this repo?\n")
 
     repo_name = os.path.basename(repo.root)
     json_path = str(Constants.CONFIG_PATH) + "/" + repo_name + ".json"
     print(json_path)
-    Constants.CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    Path(Constants.CONFIG_PATH).parent.mkdir(parents=True, exist_ok=True)
 
-    if Constants.CONFIG_PATH.exists():
+    if Path(Constants.CONFIG_PATH).exists():
         with Path(json_path).open("r", encoding='utf-8') as f:
             data = json.load(f)
+            for u in data["settings"][0]["users"]:
+                print(u.get("username") + " - " + Constants.Access_Type.Parse(u.get("account_type")))
+                print("\n")
     else:
         pprint.err("An error occurred, I could not find your project config file!")
 
-    if data:
-        for u in data["users"]:
-            pprint.blank(u.get("username") + " - " + u.get("account-type"))
-
     pprint.sep()
+
+    try:
+        with Path(str(Constants.CONFIG_PATH) + "/" + os.path.basename(repo.root)+".json").open("r", encoding="utf-8") as f:
+            d = json.load(f)
+        try:
+            w = d["settings"][0]["workflow"]
+            print(f"Workflow designated by Admin:\n{w}")
+        except Exception:
+            pprint("Your admin hasn't designated as workflow description. This is key for advising New or Novice users on how to proceed about using the system.")
+    except (FileNotFoundError):
+        pprint.err("Could not locate your shared config file")
 
     return True

@@ -21,7 +21,7 @@ from gitless import core
 from . import (
     gl_track, gl_untrack, gl_status, gl_diff, gl_commit, gl_branch, gl_tag,
     gl_checkout, gl_merge, gl_resolve, gl_fuse, gl_remote, gl_publish,
-    gl_switch, gl_init, gl_history, gl_permission, gl_undo)
+    gl_switch, gl_init, gl_history, gl_permission, gl_undo, gl_home)
 from . import pprint
 from . import helpers
 from enum import Enum
@@ -50,6 +50,7 @@ except (core.NotInRepoError, KeyError):
   pass
 
 def print_help(parser):
+  pprint.sep()
   """print help for humans"""
   print(parser.description)
   print('\ncommands:\n')
@@ -65,6 +66,17 @@ def print_help(parser):
       # get all subparsers and print help
       for choice in subparsers_action._choices_actions:
           print('    {:<19} {}'.format(choice.dest, choice.help))
+  pprint.sep()
+  try:
+    with Path(str(Constants.CONFIG_PATH) + "/" + os.path.basename(repo.root)+".json").open("r", encoding="utf-8") as f:
+      d = json.load(f)
+      try:
+        w = d["settings"][0]["workflow"]
+        print(f"Workflow designated by Admin:\n{w}")
+      except Exception:
+        pprint("Your admin hasn't designated as workflow description. This is key for advising New or Novice users on how to proceed about using the system.")
+  except (FileNotFoundError):
+    pprint.err("Could not locate your shared config file")
 
 def build_parser(subcommands, repo):
   parser = argparse.ArgumentParser(
@@ -111,11 +123,20 @@ def verify_access(json_path: Path, permission_file_name: str, username: str) -> 
 
 def main():
   #grab username from config.json in /.git
+
+  with Path(repo.path + "/dit_config.json").open("r", encoding='utf-8') as f:
+    d = json.load(f)
+    u = d["this_user"]
+    m = d["this_machine"]
+    Constants.username = u.get("username")
+    Constants.access_level = Constants.Access_Type.Parse(u.get("account_type"))
+    Constants.CONFIG_PATH = m.get("CONFIG_PATH")
+    Constants.CONFIG_PATH_REPO_URL = m.get("CONFIG_PATH_REPO_URL")
     
   sub_cmds = [
       gl_track, gl_untrack, gl_status, gl_diff, gl_commit, gl_branch, gl_tag,
       gl_checkout, gl_merge, gl_resolve, gl_fuse, gl_remote, gl_publish,
-      gl_switch, gl_init, gl_history, gl_permission, gl_undo]
+      gl_switch, gl_init, gl_history, gl_permission, gl_undo, gl_home]
 
   parser = build_parser(sub_cmds, repo)
   argcomplete.autocomplete(parser)
@@ -126,14 +147,6 @@ def main():
   args = parser.parse_args()
   try:
     if args.subcmd_name != 'init' and repo:
-      with Path(repo.path + "/dit_config.json").open("r", encoding='utf-8') as f:
-        d = json.load(f)
-        u = d["this_user"]
-        m = d["this_machine"]
-        Constants.username = u.get("username")
-        Constants.access_level = Constants.Access_Type.Parse(u.get("account_type"))
-        Constants.CONFIG_PATH = d.get("CONFIG_PATH")
-        Constants.CONFIG_PATH_REPO_URL = d.get("CONFIG_PATH_REPO_URL")
 
       permission_file_name = os.path.basename(repo.root)+".json"
       print(permission_file_name)

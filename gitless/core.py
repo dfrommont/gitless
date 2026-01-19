@@ -19,8 +19,6 @@ import sys
 
 import pygit2
 
-from cli import pprint
-
 from subprocess import run, CalledProcessError
 from pathlib import Path
 
@@ -67,9 +65,9 @@ def init_repository(url=None, only=None, exclude=None):
     exclude: if given, and only is not given, this local repository will
       consistent of all branches not in this set
   """
-  Constants.username = pprint.get_user_input("Username: ")
-  _config_path = pprint.get_user_input("Local path to config folder: ")
-  _config_url = pprint.get_user_input("Git url of config folder: ")
+  Constants.username = input("Username: ")
+  _config_path = input("Local path to config folder: ")
+  _config_url = input("Git url of config folder: ")
   cwd = os.getcwd()
   try:
     error_on_none(pygit2.discover_repository(cwd))
@@ -80,7 +78,7 @@ def init_repository(url=None, only=None, exclude=None):
       # We also create an initial root commit
       git('commit', '--allow-empty', '-m', 'Initialize repository')
 
-      pprint.blank("Generating DIT settings file for repo...")
+      print("Generating DIT settings file for repo...")
 
       # new repo state -> need to create an empty permission file for the repo and current user then push that
       repo_name = Path(repo.path).parent.name
@@ -94,7 +92,7 @@ def init_repository(url=None, only=None, exclude=None):
         else:
           data = {"settings": []}
       else:
-        pprint.err("Cannot make permission file as your gitless has not yet made contact with your DIT config server!")
+        print("Cannot make permission file as your gitless has not yet made contact with your DIT config server!")
         return None
 
       for r in data["settings"]:
@@ -126,9 +124,9 @@ def init_repository(url=None, only=None, exclude=None):
       Constants.CONFIG_PATH = _config_path
       Constants.CONFIG_PATH_REPO_URL = _config_url
 
-      pprint.ok(f"...Done and available at: {json_path}")
+      print(f"...Done and available at: {json_path}")
       Constants.sync_repo_permissions(repo_name + ".json")
-      pprint.ok("Synced to config server")
+      print("Synced to config server")
 
       return repo
 
@@ -151,7 +149,7 @@ def init_repository(url=None, only=None, exclude=None):
       new_b = repo.create_branch(rb.branch_name, rb.head)
       new_b.upstream = rb
 
-    pprint.blank("Generating DIT settings file for repo...")
+    print("Generating DIT settings file for repo...")
 
     # new repo state -> need to create an empty permission file for the repo and current user then push that
     repo_name = Path(repo.path).parent.name
@@ -165,7 +163,7 @@ def init_repository(url=None, only=None, exclude=None):
       else:
         data = {"settings": []}
     else:
-      pprint.blank("Establishing connection to DIT config server!")
+      print("Establishing connection to DIT config server!")
       Constants.sync_repo_permissions(json_path)
       if Path(json_path).exists():
         with Path(json_path).open("r", encoding='utf-8') as f:
@@ -204,11 +202,11 @@ def init_repository(url=None, only=None, exclude=None):
     Constants.CONFIG_PATH = _config_path
     Constants.CONFIG_PATH_REPO_URL = _config_url
 
-    pprint.ok(f"...Done and available at: {json_path}")
+    print(f"...Done and available at: {json_path}")
 
     #before this can finish, we need to check in with the config server and get the permission file link established
     Constants.sync_repo_permissions(Path(repo.path).parent.name+".json")
-    pprint.ok("Synced to config server")
+    print("Synced to config server")
 
     return repo
 

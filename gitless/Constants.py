@@ -34,6 +34,17 @@ class Access_Type(Enum):
       return Access_Type.EXPERT
     else:
       return Access_Type.NONE 
+        
+  @staticmethod 
+  def Parse(i: int) -> str:
+    if i == 1:
+      return "NEW"
+    elif i == 2:
+      return "NOVICE"
+    elif i == 3:
+      return "EXPERT"
+    else:
+      return "NONE"
     
   @staticmethod 
   def Serialise(self) -> int:
@@ -63,7 +74,7 @@ def _run(cmd, cwd=None, capture=False):
   )
 
 def sync_repo_permissions(file_name: str) -> bool:
-    if not CONFIG_PATH.exists() or not CONFIG_PATH.is_dir():
+    if not Path(CONFIG_PATH).exists() or not Path(CONFIG_PATH).is_dir():
         print(f"Config path {CONFIG_PATH} does not exist or is not a directory!")
 
         if not run(f"git clone {CONFIG_PATH_REPO_URL} \"{CONFIG_PATH}\"", cwd=None, capture=True):
