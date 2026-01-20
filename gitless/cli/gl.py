@@ -79,10 +79,15 @@ def print_help(parser):
     pprint.err("Could not locate your shared config file")
 
 def build_parser(subcommands, repo):
+  l = ""
+  if Path(Constants.CONFIG_PATH).exists():
+    with Path(str(Constants.CONFIG_PATH) + "/" + os.path.basename(repo.root) + ".json").open("r", encoding='utf-8') as f:
+        data = json.load(f)
+        for u in data["settings"][0]["users"]:
+            l = l + u.get("username") + " - " + Constants.Access_Type.Parse(u.get("account_type")) + "\n"
   parser = argparse.ArgumentParser(
       description=(
-          'Gitless: a version control system built on top of Git.\nMore info, '
-          'downloads and documentation at {0}'.format(URL)),
+          f'Gitless: a version control system built on top of Git.\nMore info, downloads and documentation at {URL}\n\n################################################################################\nWho has access to this repo?\n{l}\n################################################################################\n'),
       formatter_class=argparse.RawDescriptionHelpFormatter)
   if sys.version_info[0] < 3:
       parser.register('action', 'parsers', helpers.AliasedSubParsersAction)

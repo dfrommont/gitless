@@ -1,6 +1,7 @@
 from pathlib import Path
 from enum import Enum
 import subprocess
+import datetime
 
 CONFIG_PATH = "" #Set by local config.json in .../.git
 CONFIG_PATH_REPO_URL = "" #Set by local config.json in .../.git
@@ -96,7 +97,7 @@ def sync_repo_permissions(file_name: str) -> bool:
 
     if result.stdout.strip():
         if not run(
-            f"git add {file_name} && git commit -m \"Updated permissions\"",
+            f"git add {file_name} && git commit -m \"{str(datetime.datetime.now())} {username}\"",
             cwd=CONFIG_PATH, capture=True
         ):
             print("Failed to commit changes!")
@@ -138,3 +139,89 @@ def sync_repo_permissions(file_name: str) -> bool:
             return False
 
     return True
+
+def verbose_conf_dialog(branch_name, remote_name, cmd_type, args, subcmd) -> bool:
+  print('################################################################################')
+  speech = []
+  match cmd_type:
+    case "branch":
+      speech.append("You called a branch command attempting the following:")
+      if args.remote: speech.append("-r or --remote -> List list remote branches in addition to local branches")
+      if args.verbose: speech.append("-v or --verbose -> Make this command output verbose, i.e. include more detail and process visiability")
+      if args.create_b: speech.append(f"-cp or --create-branch {args.create_b} -> Create the following new branch(es) {args.create_b}")
+      if args.dp: speech.append(f"-dp or --divergent-point {args.dp} -> Create the new branch(es) diverging from this commit; otherswise use default point HEAD")
+      if args.delete_b:
+        s = f"-d or --delete-branch {args.delete_b} -> Delete the following branch(es): "
+        speech.append(s + f"{', '.join(args.delete_b)}" if args.delete_b else "")
+      if args.new_head: speech.append(f"-sh or --set-head {args.new_head or "HEAD"} -> set the head of the current branch ({branch_name}) to be this new commit: {args.new_head or "HEAD"}. Default if no commit_id given is HEAD")
+      if args.upstream_b: speech.append(f"-su or --set-upstream {args.upstream_b} -> set the upstream branch of the current branch ({branch_name}) to the new branch {args.upstream_b}")
+      if args.unset_upstream: speech.append(f"-uu or --unset-upstream: unset the upstream branch of the current branch ({branch_name})")
+      if args.rename_b:
+        if len(args.rename_b) == 1:
+          speech.append(f"-rn or --rename-branch {args.rename_b} -> Rename the current branch ({branch_name}) to {args.rename_b}")
+        elif len(args.rename_b) == 2:
+           speech.append(f"-rn or --rename-branch {args.rename_b[0]} {args.rename_b[1]} -> Rename the specified branch {args.rename_b[0]} to {args.rename_b[1]}")
+    case "checkout":
+      speech.append("You are initiating a checkout of committed files")
+      speech.append(f"{args.files} -> You are viewing the following file(s): ".join(args.files))
+      if args.cp: speech.append("-cp or --commit-point {args.cp} -> You are viewing the above files at this commit point")
+    case "commit":
+      speech.append("You are making a commit - Save changes to the local repository. By default all tracked modified files are committed. To customize the set of files to be committed use the only, exclude, and include flags")
+      if args.only: speech.append(f"{args.only} -> create the commit using only these files, note they must be \"tracked modified\" or \"untracked\" ")
+      if args.p: speech.append("-p or --partial -> you want to interactively select segments of files to commit")
+      if args.m: speech.append(f"-m or --message -> this commit will include the following message: {str(args.m)}")
+      if args.exclude:
+        s = f"-e or --exclude {args.delete_b} -> Exclude the following file(s) from the commit: "
+        speech.append(s + f"{', '.join(args.exclude)}" if args.exclude else "")
+      if args.include:
+        s = f"-e or --exclude {args.delete_b} -> Include the following file(s) from the commit: "
+        speech.append(s + f"{', '.join(args.include)}" if args.include else "")
+    case "diff":
+      speech.append("You are attempting to view changes made to files")
+      if args.only: speech.append(f"{args.only} -> create the commit using only these files, note they must be \"tracked modified\" or \"untracked\" ")
+      if args.exclude:
+        s = f"-e or --exclude {args.delete_b} -> Exclude the following file(s) from the commit: "
+        speech.append(s + f"{', '.join(args.exclude)}" if args.exclude else "")
+      if args.include:
+        s = f"-e or --exclude {args.delete_b} -> Include the following file(s) from the commit: "
+        speech.append(s + f"{', '.join(args.include)}" if args.include else "")
+    case "fuse":
+       print("\n")
+    case "history":
+       print("\n")
+    case "home":
+       print("\n")
+    case "init":
+       print("\n")
+    case "merge":
+       print("\n")
+    case "permission":
+       print("\n")
+    case "publish":
+       print("\n")
+    case "remote":
+       print("\n")
+    case "resolve":
+       print("\n")
+    case "status":
+       print("\n")
+    case "switch":
+       print("\n")
+    case "tag":
+       print("\n")
+    case "track":
+       print("\n")
+    case "undo":
+       print("\n")
+    case "untrack":
+       print("\n")
+    case _:
+       print("\n")
+
+  print("\n")
+  [print(s) for s in speech]
+  print("\n")
+         
+  print('{0}. Do you wish to continue? (y/N)'.format(cmd_type))
+  user_input = input()
+  return user_input and user_input[0].lower() == 'y'
