@@ -2,9 +2,27 @@ from pathlib import Path
 from enum import Enum
 import subprocess
 import datetime
+import sys
 
 CONFIG_PATH = "" #Set by local config.json in .../.git
 CONFIG_PATH_REPO_URL = "" #Set by local config.json in .../.git
+
+RED = '\033[31m'
+CLEAR = '\033[0m'
+def should_color():
+  # We only output colored lines if the coloring is enabled and we are not being
+  # piped or redirected
+  return not False and sys.stdout.isatty()
+def _color(color_code, text):
+  return '{0}{1}{2}'.format(color_code, text, CLEAR) if should_color() else text
+def red(text):
+  return _color(RED, text)
+def puts(s='', newline=True, stream=sys.stdout.write):
+  if newline:
+    s = s + '\n'
+  stream(s)
+def err(text):
+  puts(red('✘ {0}'.format(text)), stream=sys.stderr.write)
 
 username = ""
 
@@ -260,19 +278,45 @@ def verbose_conf_dialog(branch_name, remote_name, cmd_type, args, subcmd, upstre
     case "resolve":
        print("\n")
     case "status":
-       print("\n")
+        speech.append("Mark files with conflicts as resolved")
+        s = "Include the following files"
+        speech.append(s + f"{", ".join(args.files) if args.files else ""}")
     case "switch":
-       print("\n")
+        speech.append("Switch branches")
+        speech.append(f"Destination: {args.branch}")
+        if args.move_over:
+          speech.append(f"-mo or --move-over -> brining uncommitted changes to the current branch {branch_name} over to the new branch {args.branch}")
+        if args.move_ignored:
+          if args.move_over:
+            speech.append("-mi or --move-ignored -> this has been ignored as you have already set -mo or --move-over, ignored files will not be moved across from {branch_name} to {args.branch}")
+          else :
+            speech.append(f"-mi or --move-ignored -> move over all ignored files from the current branch {branch_name} to the new branch {args.branch}")
     case "tag":
-       print("\n")
+        speech.append("List, create, or delete tags - simple text flags against a commit or action to identify them")
+        if args.remote:
+          speech.append("-r or --remote -> List remote tags alongside local tags")
+        if args.create_t:
+          s = f"-c or --create -> Create the following tag(s): "
+          speech.append(s + f"{", ".join(args.create_t) if args.create_t else ""}")
+        if args.ci:
+          speech.append(f"-ci or --commit {args.ci if args.ci else "HEAD"} -> tag the commit {args.ci if args.ci else "HEAD"} with the new tag {frozenset(args.create_t)[0]}")
+        if args.delete_t:
+          s = f"-d or --delete -> Delete the following tag(s): "
+          speech.append(s + f"{", ".join(args.delete_t) if args.delete_t else ""}")
     case "track":
-       print("\n")
+        s = "Start tracking changes to the following file(s)"
+        speech.append(s + f"{", ".join(args.files) if args.files else ""}")
     case "undo":
-       print("\n")
+        speech.append("Undo local commits that contain mistakes or you do not want to be pushed tothe remote. Use -l LIMIT to control how many commits are to be undone (default1). Commits will be undone until either the limit, there are no more local-only commits or a merge commit is reached")
+        if args.limit:
+           speech.append(f"-l or --limit -> This will try to delete the top {args.limit} commit(s) starting with the HEAD of the current branch {branch_name}")
+        else:
+           speech.append("This will try to revert only the top commit (HEAD) of the current branch {branch_name}")
     case "untrack":
-       print("\n")
+        s = "Stop tracking changes to the following file(s)"
+        speech.append(s + f"{", ".join(args.files) if args.files else ""}")
     case _:
-       print("\n")
+        err("Some internal error occurred, confirm dialog was called on an unknown command!")
 
   print("\n")
   [print(s) for s in speech]
