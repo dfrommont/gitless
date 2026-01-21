@@ -19,13 +19,13 @@ def parser(subparsers, repo):
   permission_parser = subparsers.add_parser(
       'permission', help=desc, description=(
         desc.capitalize() + '. ' +
-        'Use the -a to add new users by username, -e to edit the access level of a username and -d to remove users from the repository'),
+        f'Use the -a to add new users by username, -e to edit the access level of a username and -d to remove users from the repository. Access Levels: {Constants.Access_Type.GetAccessTypes()}'),
         aliases=['perm'])
   permission_parser.add_argument(
     '-a', '--add', nargs='+', help=('add new user by username to the repository (access level defaults to NEW) - format username/access_level')
   )
   permission_parser.add_argument(
-    '-e', '--edit', nargs='+', help=('set the access level of a given username to a new value')
+    '-e', '--edit', nargs='+', help=('set the access level of a given username to a new value - format username/new_access_level')
   )
   permission_parser.add_argument(
     '-d', '--delete', nargs='+', help=('remove a username from the respository')

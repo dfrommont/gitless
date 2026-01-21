@@ -15,7 +15,7 @@ from . import helpers, pprint
 
 
 def parser(subparsers, repo):
-  desc = 'List the base location of the project on your system, display the readme and list who is using the project'
+  desc = 'Lists the base location of the project on your system, display the project readme, list who is using the project and how you should work with the repository'
   permission_parser = subparsers.add_parser(
       'home', help=desc, description=(
         desc.capitalize()),

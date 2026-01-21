@@ -81,10 +81,13 @@ def print_help(parser):
 def build_parser(subcommands, repo):
   l = ""
   if Path(Constants.CONFIG_PATH).exists():
-    with Path(str(Constants.CONFIG_PATH) + "/" + os.path.basename(repo.root) + ".json").open("r", encoding='utf-8') as f:
-        data = json.load(f)
-        for u in data["settings"][0]["users"]:
-            l = l + u.get("username") + " - " + Constants.Access_Type.Parse(u.get("account_type")) + "\n"
+    try:
+      with Path(str(Constants.CONFIG_PATH) + "/" + os.path.basename(repo.root) + ".json").open("r", encoding='utf-8') as f:
+          data = json.load(f)
+          for u in data["settings"][0]["users"]:
+              l = l + u.get("username") + " - " + Constants.Access_Type.Parse(u.get("account_type")) + "\n"
+    except AttributeError:
+      pprint.err("...")
   parser = argparse.ArgumentParser(
       description=(
           f'Gitless: a version control system built on top of Git.\nMore info, downloads and documentation at {URL}\n\n################################################################################\nWho has access to this repo?\n{l}\n################################################################################\n'),
@@ -129,14 +132,17 @@ def verify_access(json_path: Path, permission_file_name: str, username: str) -> 
 def main():
   #grab username from config.json in /.git
 
-  with Path(repo.path + "/dit_config.json").open("r", encoding='utf-8') as f:
-    d = json.load(f)
-    u = d["this_user"]
-    m = d["this_machine"]
-    Constants.username = u.get("username")
-    Constants.access_level = Constants.Access_Type.Parse(u.get("account_type"))
-    Constants.CONFIG_PATH = m.get("CONFIG_PATH")
-    Constants.CONFIG_PATH_REPO_URL = m.get("CONFIG_PATH_REPO_URL")
+  try:
+    with Path(repo.path + "/dit_config.json").open("r", encoding='utf-8') as f:
+      d = json.load(f)
+      u = d["this_user"]
+      m = d["this_machine"]
+      Constants.username = u.get("username")
+      Constants.access_level = Constants.Access_Type.Parse(u.get("account_type"))
+      Constants.CONFIG_PATH = m.get("CONFIG_PATH")
+      Constants.CONFIG_PATH_REPO_URL = m.get("CONFIG_PATH_REPO_URL")
+  except AttributeError:
+    pprint.err("Checking if you are in a Gitless repo...")
     
   sub_cmds = [
       gl_track, gl_untrack, gl_status, gl_diff, gl_commit, gl_branch, gl_tag,
