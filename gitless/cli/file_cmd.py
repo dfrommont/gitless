@@ -7,7 +7,7 @@
 
 from . import helpers, pprint
 
-import Constants
+import core
 
 
 VOWELS = ('a', 'e', 'i', 'o', 'u')
@@ -30,8 +30,8 @@ def parser(help_msg, subcmd, subcmd_aliases=[]):
 
 def main(subcmd):
   def f(args, repo):
-    if Constants.Access_Type.ParseStr(Constants.access_level) == Constants.Access_Type.NEW:
-      if Constants.verbose_conf_dialog(repo.current_branch, subcmd, args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, pygit2.GIT_BRANCH_LOCAL).upstream.name):
+    if core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NEW:
+      if core.Constants.verbose_conf_dialog(repo.current_branch, subcmd, args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream.name):
           pprint.ok("Command confirmed, continuing...")
       else:
           pprint.err("Command aborted, ending...")
