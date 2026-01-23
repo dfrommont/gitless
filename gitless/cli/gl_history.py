@@ -7,6 +7,7 @@
 
 import os
 import tempfile
+import Constants
 
 from . import helpers, pprint
 
@@ -31,6 +32,13 @@ def parser(subparsers, _):
 
 
 def main(args, repo):
+  if Constants.Access_Type.ParseStr(Constants.access_level) == Constants.Access_Type.NEW:
+    if Constants.verbose_conf_dialog(repo.current_branch, "history", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, pygit2.GIT_BRANCH_LOCAL).upstream.name):
+      pprint.ok("Command confirmed, continuing...")
+    else:
+      pprint.err("Command aborted, ending...")
+      return False
+
   b = helpers.get_branch(args.b, repo) if args.b else repo.current_branch
   with tempfile.NamedTemporaryFile(mode='w', delete=False) as tf:
     count = 0

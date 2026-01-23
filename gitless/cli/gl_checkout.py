@@ -31,6 +31,13 @@ def main(args, repo):
   curr_b = repo.current_branch
   cp = args.cp
 
+  if core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NEW:
+    if core.Constants.verbose_conf_dialog(repo.current_branch, "checkout", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream.name):
+      pprint.ok("Command confirmed, continuing...")
+    else:
+      pprint.err("Command aborted, ending...")
+      return False
+
   for fp in args.files:
     conf_msg = (
         'You have uncomitted changes in "{0}" that could be overwritten by '

@@ -38,6 +38,13 @@ def main(args, repo):
     #make the requested changes to the JSON
     #call the sync command we defined for the main program to push the changes up and out
 
+    if core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NEW:
+        if core.Constants.verbose_conf_dialog(repo.current_branch, "permission", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream.name):
+            pprint.ok("Command confirmed, continuing...")
+        else:
+            pprint.err("Command aborted, ending...")
+        return False
+
     repo_name = os.path.basename(repo.root)
     json_path = str(Constants.CONFIG_PATH) + "/" + repo_name + ".json"
     print(json_path)

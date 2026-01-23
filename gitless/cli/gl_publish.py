@@ -7,6 +7,8 @@
 
 from . import helpers, pprint
 
+import core
+
 
 def parser(subparsers, _):
   """Adds the publish parser to the given subparsers object."""
@@ -19,6 +21,13 @@ def parser(subparsers, _):
 
 
 def main(args, repo):
+  if core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NEW:
+    if core.Constants.verbose_conf_dialog(repo.current_branch, "publish", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream.name):
+        pprint.ok("Command confirmed, continuing...")
+    else:
+        pprint.err("Command aborted, ending...")
+    return False
+
   current_b = repo.current_branch
   dst_b = helpers.get_branch_or_use_upstream(args.dst, 'dst', repo)
   current_b.publish(dst_b)

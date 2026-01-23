@@ -33,7 +33,7 @@ class Access_Type(Enum):
   EXPERT = 3
 
   @staticmethod
-  def Parse(t: str) -> "Access_Type":
+  def ParseStr(t: str) -> "Access_Type":
     if t == "New" or t == "NEW":
       return Access_Type.NEW
     elif t == "Novice" or t == "novice":
@@ -44,7 +44,7 @@ class Access_Type(Enum):
       return Access_Type.NONE 
     
   @staticmethod 
-  def Parse(i: int) -> "Access_Type":
+  def ParseInt(i: int) -> "Access_Type":
     if i == 1:
       return Access_Type.NEW
     elif i == 2:
@@ -162,8 +162,8 @@ def sync_repo_permissions(file_name: str) -> bool:
 
     return True
 
-def verbose_conf_dialog(branch_name, remote_name, cmd_type, args, subcmd, upstream) -> bool:
-  print('################################################################################')
+def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
+  print('\n################################################################################')
   speech = []
   match cmd_type:
     case "branch":
@@ -276,7 +276,8 @@ def verbose_conf_dialog(branch_name, remote_name, cmd_type, args, subcmd, upstre
         s = f"-rn or --rename [...] -> Rename the following remotes to the paired name: "
         speech.append(s + f"{", ".join([f"{a} becomes {b}" for a, b in zip(args.rename_r[::2], args.rename_r[1::2])])}")
     case "resolve":
-       print("\n")
+        s = "Mark the following file(s) with conflicts as resolved:"
+        speech.append(s + f"{", ".join(args.files) if args.files else ""}")
     case "status":
         speech.append("Mark files with conflicts as resolved")
         s = "Include the following files"
@@ -318,9 +319,7 @@ def verbose_conf_dialog(branch_name, remote_name, cmd_type, args, subcmd, upstre
     case _:
         err("Some internal error occurred, confirm dialog was called on an unknown command!")
 
-  print("\n")
   [print(s) for s in speech]
-  print("\n")
          
   print('{0}. Do you wish to continue? (y/N)'.format(cmd_type))
   user_input = input()

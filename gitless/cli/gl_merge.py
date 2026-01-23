@@ -24,6 +24,14 @@ def parser(subparsers, repo):
 
 def main(args, repo):
   current_b = repo.current_branch
+
+  if core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NEW or core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NOVICE:
+    if core.Constants.verbose_conf_dialog(repo.current_branch, "merge", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream.name):
+      pprint.ok("Command confirmed, continuing...")
+    else:
+      pprint.err("Command aborted, ending...")
+      return False
+
   if args.abort:
     current_b.abort_merge()
     pprint.ok('Merge aborted successfully')

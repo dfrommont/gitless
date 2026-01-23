@@ -7,6 +7,8 @@
 
 import os
 import tempfile
+import pygit2
+import Constants
 
 from . import helpers, pprint
 
@@ -27,6 +29,13 @@ def main(args, repo):
   files = helpers.oei_fs(args, repo)
   if not files:
     pprint.warn('No files to diff')
+  
+  if Constants.Access_Type.ParseStr(Constants.access_level) == Constants.Access_Type.NEW:
+    if Constants.verbose_conf_dialog(repo.current_branch, "diff", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, pygit2.GIT_BRANCH_LOCAL).upstream.name):
+      pprint.ok("Command confirmed, continuing...")
+    else:
+      pprint.err("Command aborted, ending...")
+      return False
 
   success = True
   curr_b = repo.current_branch

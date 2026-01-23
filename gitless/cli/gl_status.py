@@ -24,6 +24,13 @@ def parser(subparsers, repo):
 
 
 def main(args, repo):
+  if core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NEW:
+    if core.Constants.verbose_conf_dialog(repo.current_branch, "status", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream.name):
+        pprint.ok("Command confirmed, continuing...")
+    else:
+        pprint.err("Command aborted, ending...")
+    return False
+
   curr_b = repo.current_branch
   pprint.msg('On branch {0}, repo-directory {1}'.format(
     pprint.green(curr_b.branch_name), pprint.green('//' + repo.cwd)))

@@ -7,6 +7,8 @@
 
 from . import pprint
 
+import core
+
 
 def parser(subparsers, _):
   """Adds the switch parser to the given subparsers object."""
@@ -33,6 +35,13 @@ def main(args, repo):
     pprint.err('Branch {0} doesn\'t exist'.format(args.branch))
     pprint.err_exp('to list existing branches do gl branch')
     pprint.err_exp('to create a new branch do gl branch -c {0}'.format(args.branch))
+    return False
+  
+  if core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NEW or core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NOVICE:
+    if core.Constants.verbose_conf_dialog(repo.current_branch, "switch", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream.name):
+        pprint.ok("Command confirmed, continuing...")
+    else:
+        pprint.err("Command aborted, ending...")
     return False
 
   repo.switch_current_branch(b, move_over=args.move_over, move_ignored=args.move_ignored)
