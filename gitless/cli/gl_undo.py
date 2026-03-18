@@ -43,7 +43,6 @@ def main(args, repo):
         limit = 1
     else:
         limit = args.limit
-    print(limit)
     count = 0
     while count < limit:
 
@@ -81,5 +80,9 @@ def main(args, repo):
         if reset.returncode != 0:
             print("Failed to undo commit")
             return False
+        if limit > 1:
+            pprint.ok("Undo successful; continuing to next")
+        else:
+            pprint.ok("Undo successful!")
     
     return True

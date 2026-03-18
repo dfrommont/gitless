@@ -6,8 +6,7 @@
 
 
 from . import pprint
-
-import core
+from .. import core
 
 
 def parser(subparsers, _):

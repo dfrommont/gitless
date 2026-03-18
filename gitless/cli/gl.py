@@ -113,19 +113,15 @@ def setup_windows_console():
     kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
 def verify_access(json_path: Path, permission_file_name: str, username: str) -> Constants.Access_Type:
-  print(f"path: {json_path}")
-  print(f"permission_file_name: {permission_file_name}")
-  print(f"username: {username}")
   with Path(json_path).open("r", encoding='utf-8') as f:
     data = json.load(f)
-    print("file exists")
     for repo in data.get("settings", []):
       if repo.get("repo_name") != permission_file_name:
         continue
       for user in repo.get("users", []):
         if user.get("username") == username:
           return Constants.Access_Type.Parse(user.get("account_type"))
-      print("user not existy")
+      pprint.err("Could not find given user in config file")
       return Constants.Access_Type.NONE
     return Constants.Access_Type.NONE
 
@@ -160,7 +156,6 @@ def main():
     if args.subcmd_name != 'init' and repo:
 
       permission_file_name = os.path.basename(repo.root)+".json"
-      print(permission_file_name)
       if not Constants.sync_repo_permissions(permission_file_name):
         print("The repo failed to update it's permissions from the config server!")
         quit()

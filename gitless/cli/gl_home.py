@@ -32,7 +32,8 @@ def main(args, repo):
 
     pprint.sep()
 
-    print(f"Repo Location: {repo.root}")
+    print(f"Repo: {os.path.basename(repo.root)}, Location: {repo.root}")
+    print(f"Current branch: {repo.current_branch}")
     print(f"Config file location: {str(Constants.CONFIG_PATH) + "/" + repo.root + ".json"}\n")
 
     pprint.sep()
@@ -55,7 +56,7 @@ def main(args, repo):
 
         if name: 
             with Path(str(Path(repo.root))+"/"+name).open("r", encoding='utf-8') as f:
-                print(f.read())
+                pprint.ok(f.read())
     
     pprint.sep()
 
@@ -63,7 +64,6 @@ def main(args, repo):
 
     repo_name = os.path.basename(repo.root)
     json_path = str(Constants.CONFIG_PATH) + "/" + repo_name + ".json"
-    print(json_path)
     Path(Constants.CONFIG_PATH).parent.mkdir(parents=True, exist_ok=True)
 
     if Path(Constants.CONFIG_PATH).exists():
@@ -77,6 +77,10 @@ def main(args, repo):
 
     pprint.sep()
 
+    print(f"You are user: {Constants.username}, with access level: {Constants.Access_Type.ParseStr(Constants.access_level)}")
+
+    pprint.sep()
+
     try:
         with Path(str(Constants.CONFIG_PATH) + "/" + os.path.basename(repo.root)+".json").open("r", encoding="utf-8") as f:
             d = json.load(f)
@@ -87,5 +91,11 @@ def main(args, repo):
             pprint("Your admin hasn't designated as workflow description. This is key for advising New or Novice users on how to proceed about using the system.")
     except (FileNotFoundError):
         pprint.err("Could not locate your shared config file")
+
+    pprint.sep()
+
+    print(Constants._run("git status -v", repo.root, capture=True).stdout)
+
+    pprint.sep()
 
     return True

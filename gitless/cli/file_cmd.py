@@ -7,7 +7,7 @@
 
 from . import helpers, pprint
 
-import core
+from .. import core
 
 
 VOWELS = ('a', 'e', 'i', 'o', 'u')

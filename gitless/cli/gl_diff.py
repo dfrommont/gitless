@@ -8,7 +8,7 @@
 import os
 import tempfile
 import pygit2
-import Constants
+from .. import Constants
 
 from . import helpers, pprint
 

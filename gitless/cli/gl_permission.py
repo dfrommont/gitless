@@ -43,14 +43,14 @@ def main(args, repo):
             pprint.ok("Command confirmed, continuing...")
         else:
             pprint.err("Command aborted, ending...")
-        return False
+            return False
 
     repo_name = os.path.basename(repo.root)
     json_path = str(Constants.CONFIG_PATH) + "/" + repo_name + ".json"
     print(json_path)
-    Constants.CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    Path(Constants.CONFIG_PATH).parent.mkdir(parents=True, exist_ok=True)
 
-    if Constants.CONFIG_PATH.exists():
+    if Path(Constants.CONFIG_PATH).exists():
         with Path(json_path).open("r", encoding='utf-8') as f:
             data = json.load(f)
     else:
@@ -64,10 +64,8 @@ def main(args, repo):
                 creds = [tuple(entry.split('/', 1)) for entry in add]
                 print(creds)
                 users = [(u.get("username"), u.get("account_type")) for u in r["users"]]
-                print(users)
                 to_add = list(set(creds) - set(users))
                 print(to_add)
-                print("3")
                 for username, access_level in to_add:
                     r["users"].append(
                         {
@@ -75,6 +73,7 @@ def main(args, repo):
                             "account_type": Constants.Access_Type.Serialise(access_level)
                         }
                     )
+                    pprint.ok(f"Added user {username} to the repository with access level {access_level}")
 
             if args.edit:
                 edit = frozenset(args.edit)
@@ -86,9 +85,12 @@ def main(args, repo):
                                 user["account_type"] = new_level
                             else:
                                 user["account_type"] = Constants.Access_Type.Serialise(new_level)
+                            pprint.ok(f"Amended user {username} in the repository to have new access level {Constants.Access_Type.Serialise(access_level)}")
 
             if args.delete:
                 delete = frozenset(args.delete)
+                for u in delete:
+                    pprint.ok("Removed user {u} from the repository")
                 r["users"] = [u for u in r["users"] if u.get("username") not in delete]
 
             with Path(json_path).open("w", encoding='utf-8') as f:

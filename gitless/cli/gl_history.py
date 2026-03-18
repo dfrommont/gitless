@@ -7,8 +7,7 @@
 
 import os
 import tempfile
-import Constants
-
+from .. import Constants
 from . import helpers, pprint
 
 
