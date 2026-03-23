@@ -2,7 +2,7 @@
 # Gitless - a version control system built on top of Git
 # Licensed under MIT
 
-"""gl permission - Undo local commits that contain mistakes or you don't want to be pushed to the remote."""
+"""gl undo - Undo local commits that contain mistakes or you don't want to be pushed to the remote."""
 
 from .. import Constants
 import os
