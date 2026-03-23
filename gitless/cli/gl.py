@@ -11,7 +11,6 @@ import argcomplete
 import traceback
 import pygit2
 import os
-import subprocess
 import json
 
 from pathlib import Path
@@ -22,12 +21,12 @@ from gitless import core
 from . import (
     gl_track, gl_untrack, gl_status, gl_diff, gl_commit, gl_branch, gl_tag,
     gl_checkout, gl_merge, gl_resolve, gl_fuse, gl_remote, gl_publish,
-    gl_switch, gl_init, gl_history)
+    gl_switch, gl_init, gl_history, gl_permission, gl_undo, gl_home)
 from . import pprint
 from . import helpers
 from enum import Enum
 
-import Constants
+from .. import Constants
 
 
 SUCCESS = 0
@@ -50,73 +49,8 @@ try:
 except (core.NotInRepoError, KeyError):
   pass
 
-def run(cmd, cwd=None):
-  result = subprocess.run(
-    cmd,
-    cwd=cwd,
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL,
-    shell=True
-  )
-  return result.returncode == 0
-
-def sync_repo_permissions(repo_name) -> bool:
-  if not Constants.CONFIG_PATH.exists() or not Constants.CONFIG_PATH.is_dir():
-    print(f"Config path {Constants.CONFIG_PATH} does not exist or is not a directory!")
-
-    if not run(f"git clone {Constants.CONFIG_PATH_REPO_URL} \"{Constants.CONFIG_PATH}\""):
-      print("Failed to close config repository!")
-      return False
-  
-  if not run("git fetch --quiet", cwd=Constants.CONFIG_PATH):
-    print("Failed to fetch updates to config repository!")
-    return False
-  
-  result = subprocess.run(
-    f"git status --porcelain {repo_name}.json",
-    cwd=Constants.CONFIG_PATH,
-    shell=True,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.DEVNULL,
-    text=True
-  )
-
-  if result.stdout.strip():
-    if not run(
-      f"git add {repo_name}.json && git commit -m \"Update permissions\" --quiet",
-      cwd=Constants.CONFIG_PATH
-    ):
-      print(f"Failed to commit changes to {repo_name}.json")
-      return False
-    
-  result = subprocess.run(
-    "git rev-list --left-reight --count HEAD..@{u}",
-    cwd=Constants.CONFIG_PATH,
-    shell=True,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.DEVNULL,
-    text=True
-  )
-
-  if result.returncode != 0:
-    print("Failed to get git sync state!")
-    return False
-  
-  behind, ahead = map(int, result.stdout.strip().split())
-
-  if behind > 0:
-    if not run("git pull --rebase --quiet", cwd=Constants.CONFIG_PATH):
-      print("Failed to pull updates for config repository!")
-      return False
-    
-  if ahead > 0:
-    if not run("git push --quiet", cwd=Constants.CONFIG_PATH):
-      print("Failed to push update for config repository!")
-      return False
-      
-  return True
-
 def print_help(parser):
+  pprint.sep()
   """print help for humans"""
   print(parser.description)
   print('\ncommands:\n')
@@ -132,12 +66,31 @@ def print_help(parser):
       # get all subparsers and print help
       for choice in subparsers_action._choices_actions:
           print('    {:<19} {}'.format(choice.dest, choice.help))
+  pprint.sep()
+  try:
+    with Path(str(Constants.CONFIG_PATH) + "/" + os.path.basename(repo.root)+".json").open("r", encoding="utf-8") as f:
+      d = json.load(f)
+      try:
+        w = d["settings"][0]["workflow"]
+        print(f"Workflow designated by Admin:\n{w}")
+      except Exception:
+        pprint("Your admin hasn't designated as workflow description. This is key for advising New or Novice users on how to proceed about using the system.")
+  except (FileNotFoundError):
+    pprint.err("Could not locate your shared config file")
 
 def build_parser(subcommands, repo):
+  l = ""
+  if Path(Constants.CONFIG_PATH).exists():
+    try:
+      with Path(str(Constants.CONFIG_PATH) + "/" + os.path.basename(repo.root) + ".json").open("r", encoding='utf-8') as f:
+          data = json.load(f)
+          for u in data["settings"][0]["users"]:
+              l = l + u.get("username") + " - " + Constants.Access_Type.Parse(u.get("account_type")) + "\n"
+    except AttributeError:
+      pprint.err("...")
   parser = argparse.ArgumentParser(
       description=(
-          'Gitless: a version control system built on top of Git.\nMore info, '
-          'downloads and documentation at {0}'.format(URL)),
+          f'Gitless: a version control system built on top of Git.\nMore info, downloads and documentation at {URL}\n\n################################################################################\nWho has access to this repo?\n{l}\n################################################################################\n'),
       formatter_class=argparse.RawDescriptionHelpFormatter)
   if sys.version_info[0] < 3:
       parser.register('action', 'parsers', helpers.AliasedSubParsersAction)
@@ -159,43 +112,38 @@ def setup_windows_console():
     kernel32 = ctypes.windll.kernel32
     kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
-def verify_access(json_path: Path, permission_file_name: str, username: str, password: str) -> Constants.Access_Type:
-  with json_path.open("r", encoding='utf-8') as f:
+def verify_access(json_path: Path, permission_file_name: str, username: str) -> Constants.Access_Type:
+  with Path(json_path).open("r", encoding='utf-8') as f:
     data = json.load(f)
     for repo in data.get("settings", []):
       if repo.get("repo_name") != permission_file_name:
         continue
       for user in repo.get("users", []):
-        if user.get("username") != username:
-          continue
-        if user.get("password") == password:
+        if user.get("username") == username:
           return Constants.Access_Type.Parse(user.get("account_type"))
-        return Constants.Access_Type.NONE
+      pprint.err("Could not find given user in config file")
       return Constants.Access_Type.NONE
     return Constants.Access_Type.NONE
 
 def main():
-  #first things first, go off and get the permissions file
-  #have them log in
-  #boom we have username, permission and repo
+  #grab username from config.json in /.git
 
-  if repo:
-    permission_file_name = os.path.basename(repo.root)+".json"
-    if not sync_repo_permissions(permission_file_name):
-      print("The repo failed to update it's permissions from the config server!")
-      exit
-    else:
-      Constants.username = input("Username: ")
-      Constants.password = input("Password: ")
-      Constants.access_level = verify_access(Constants.CONFIG_PATH + "/" + permission_file_name, permission_file_name, Constants.username, Constants.password)
-      if Constants.access_level == Constants.Access_Type.NONE:
-        print("You do not have permission to access this repo!")
-        exit
+  try:
+    with Path(repo.path + "/dit_config.json").open("r", encoding='utf-8') as f:
+      d = json.load(f)
+      u = d["this_user"]
+      m = d["this_machine"]
+      Constants.username = u.get("username")
+      Constants.access_level = Constants.Access_Type.Parse(u.get("account_type"))
+      Constants.CONFIG_PATH = m.get("CONFIG_PATH")
+      Constants.CONFIG_PATH_REPO_URL = m.get("CONFIG_PATH_REPO_URL")
+  except AttributeError:
+    pprint.err("Checking if you are in a Gitless repo...")
     
   sub_cmds = [
       gl_track, gl_untrack, gl_status, gl_diff, gl_commit, gl_branch, gl_tag,
       gl_checkout, gl_merge, gl_resolve, gl_fuse, gl_remote, gl_publish,
-      gl_switch, gl_init, gl_history]
+      gl_switch, gl_init, gl_history, gl_permission, gl_undo, gl_home]
 
   parser = build_parser(sub_cmds, repo)
   argcomplete.autocomplete(parser)
@@ -205,6 +153,17 @@ def main():
 
   args = parser.parse_args()
   try:
+    if args.subcmd_name != 'init' and repo:
+
+      permission_file_name = os.path.basename(repo.root)+".json"
+      if not Constants.sync_repo_permissions(permission_file_name):
+        print("The repo failed to update it's permissions from the config server!")
+        quit()
+      else:
+        Constants.access_level = verify_access(str(Constants.CONFIG_PATH)+ "/" + permission_file_name, os.path.basename(repo.root), Constants.username)
+        if Constants.access_level == Constants.Access_Type.NONE:
+          print("You do not have permission to access this repo!")
+          quit()
     if args.subcmd_name != 'init' and not repo:
       raise core.NotInRepoError('You are not in a Gitless\'s repository')
 

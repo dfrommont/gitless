@@ -22,7 +22,7 @@ import pygit2
 from subprocess import run, CalledProcessError
 from pathlib import Path
 
-import Constants
+from . import Constants
 
 ENCODING = getpreferredencoding() or 'utf-8'
 
@@ -65,6 +65,9 @@ def init_repository(url=None, only=None, exclude=None):
     exclude: if given, and only is not given, this local repository will
       consistent of all branches not in this set
   """
+  Constants.username = input("Username: ")
+  _config_path = input("Local path to config folder: ")
+  _config_url = input("Git url of config folder: ")
   cwd = os.getcwd()
   try:
     error_on_none(pygit2.discover_repository(cwd))
@@ -75,16 +78,22 @@ def init_repository(url=None, only=None, exclude=None):
       # We also create an initial root commit
       git('commit', '--allow-empty', '-m', 'Initialize repository')
 
-      # new repo state -> need to create an empty permission file for the repo and current user then push that
-      json_path = Constants.CONFIG_PATH + "/" + os.path.basename(repo.path) + ".json"
-      repo_name = os.path.basename(repo.path)
-      json_path.parent.mkdir(parents=True, exist_ok=True)
+      print("Generating DIT settings file for repo...")
 
-      if json_path.exists():
-        with json_path.open("r", encoding='utf-8') as f:
-          data = json.load(f)
+      # new repo state -> need to create an empty permission file for the repo and current user then push that
+      repo_name = Path(repo.path).parent.name
+      json_path = str(Constants.CONFIG_PATH) + "/" + repo_name + ".json"
+      Constants.CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+      if Constants.CONFIG_PATH.exists():
+        if Path(json_path).exists():
+          with Path(json_path).open("r", encoding='utf-8') as f:
+            data = json.load(f)
+        else:
+          data = {"settings": []}
       else:
-        data = {"settings": []}
+        print("Cannot make permission file as your gitless has not yet made contact with your DIT config server!")
+        return None
 
       for r in data["settings"]:
         if r.get("repo_name") == repo_name:
@@ -95,20 +104,29 @@ def init_repository(url=None, only=None, exclude=None):
 
       for u in repo["users"]:
         if u.get("username") == Constants.username:
-          u["password"] = Constants.password
-          u["account_type"] = Constants.account_type
+          u["account_type"] = Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
           break
       else:
         repo["users"].append(
           {
             "username": Constants.username,
-            "password": Constants.password,
-            "account_type": Constants.account_type
+            "account_type": Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
           }
         )
 
-      with json_path.open("w", encoding='utf-8') as f:
+      with Path(json_path).open("w", encoding='utf-8') as f:
         json.dump(data, f, indent=2, sort_keys=True)
+
+      with Path(repo.path.parent + "/../.git/dit_config.json").open("w", encoding='utf-8') as f:
+        info = {"this_user":{"username": Constants.username, "account_type": Constants.Access_Type.NEW.Serialise(Constants.access_level)}, "this_machine":{"CONFIG_PATH": _config_path, "CONFIG_PATH_REPO_URL":_config_url}}
+        json.dump(info, f, indent=2, sort_keys=True)
+
+      Constants.CONFIG_PATH = _config_path
+      Constants.CONFIG_PATH_REPO_URL = _config_url
+
+      print(f"...Done and available at: {json_path}")
+      Constants.sync_repo_permissions(repo_name + ".json")
+      print("Synced to config server")
 
       return repo
 
@@ -130,6 +148,66 @@ def init_repository(url=None, only=None, exclude=None):
         continue
       new_b = repo.create_branch(rb.branch_name, rb.head)
       new_b.upstream = rb
+
+    print("Generating DIT settings file for repo...")
+
+    # new repo state -> need to create an empty permission file for the repo and current user then push that
+    repo_name = Path(repo.path).parent.name
+    json_path = str(Constants.CONFIG_PATH) + "/" + repo_name + ".json"
+    Constants.CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    if Constants.CONFIG_PATH.exists():
+      if Path(json_path).exists():
+        with Path(json_path).open("r", encoding='utf-8') as f:
+          data = json.load(f)
+      else:
+        data = {"settings": []}
+    else:
+      print("Establishing connection to DIT config server!")
+      Constants.sync_repo_permissions(json_path)
+      if Path(json_path).exists():
+        with Path(json_path).open("r", encoding='utf-8') as f:
+          data = json.load(f)
+      else:
+        data = {"settings": []}
+
+    for r in data["settings"]:
+      if r.get("repo_name") == repo_name:
+        break
+    else:
+      r = {"repo_name": repo_name, "users": []}
+      data["settings"].append(r)
+
+    for u in r["users"]:
+      if u.get("username") == Constants.username:
+        u["account_type"] = Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
+        break
+    else:
+      r["users"].append(
+        {
+          "username": Constants.username,
+          "account_type": Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
+        }
+      )
+
+    with Path(json_path).open("w", encoding='utf-8') as f:
+      print(data)
+      json.dump(data, f, indent=2, sort_keys=True)
+
+    config_path = str(Path(repo.path).parent) + "/.git/dit_config.json"
+    with Path(config_path).open("w", encoding='utf-8') as f:
+      info = {"this_user":{"username": Constants.username, "account_type": Constants.Access_Type.NEW.Serialise(Constants.access_level)}, "this_machine":{"CONFIG_PATH": _config_path, "CONFIG_PATH_REPO_URL":_config_url}}
+      json.dump(info, f, indent=2, sort_keys=True)
+      
+    Constants.CONFIG_PATH = _config_path
+    Constants.CONFIG_PATH_REPO_URL = _config_url
+
+    print(f"...Done and available at: {json_path}")
+
+    #before this can finish, we need to check in with the config server and get the permission file link established
+    Constants.sync_repo_permissions(Path(repo.path).parent.name+".json")
+    print("Synced to config server")
+
     return repo
 
 
