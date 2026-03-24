@@ -41,7 +41,7 @@ def main(args, repo):
         pprint.ok("Command confirmed, continuing...")
     else:
         pprint.err("Command aborted, ending...")
-    return False
+        return False
 
   repo.switch_current_branch(b, move_over=args.move_over, move_ignored=args.move_ignored)
   pprint.ok('Switched to branch {0}'.format(args.branch))

@@ -54,7 +54,7 @@ def main(args, repo):
         pprint.ok("Command confirmed, continuing...")
     else:
         pprint.err("Command aborted, ending...")
-    return False
+        return False
 
   ret = True
   if args.create_t:

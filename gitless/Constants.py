@@ -280,9 +280,10 @@ def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
         s = "Mark the following file(s) with conflicts as resolved:"
         speech.append(s + f"{", ".join(args.files) if args.files else ""}\n")
     case "status":
-        speech.append("Mark files with conflicts as resolved\n")
-        s = "Include the following files"
-        speech.append(s + f"{", ".join(args.files) if args.files else ""}\n")
+        speech.append("View the status of the repo or a subset of it\n")
+        if args.paths:
+          s = "Query the status of the following files"
+          speech.append(s + f"{", ".join(args.paths) if args.paths else ""}\n")
     case "switch":
         speech.append("Switch branches\n")
         speech.append(f"Destination: {args.branch}\n")
@@ -306,7 +307,7 @@ def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
           s = f"-d or --delete -> Delete the following tag(s): "
           speech.append(s + f"{", ".join(args.delete_t) if args.delete_t else ""}\n")
     case "track":
-        s = "Start tracking changes to the following file(s)"
+        s = "Start tracking changes to the following file(s):\n"
         speech.append(s + f"{", ".join(args.files) if args.files else ""}\n")
     case "undo":
         speech.append("Undo local commits that contain mistakes or you do not want to be pushed tothe remote. Use -l LIMIT to control how many commits are to be undone (default1). Commits will be undone until either the limit, there are no more local-only commits or a merge commit is reached\n")
@@ -322,6 +323,6 @@ def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
 
   [print(s) for s in speech]
          
-  print('{0}. Do you wish to continue? (y/N)'.format(cmd_type))
+  print('{0} -> Do you wish to continue? (y/N)'.format(cmd_type))
   user_input = input()
   return user_input and user_input[0].lower() == 'y'

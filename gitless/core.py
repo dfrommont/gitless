@@ -69,7 +69,7 @@ def init_repository(url=None, only=None, exclude=None):
   _config_path = input("Local path to config folder: ")
   _config_url = input("Git url of config folder: ")
   server = input("IP of Git HTTP-server (not sure what this is? ask your admin): ")
-  port = input("port number of Git HTTP-server (not sure what this is? ask your admin): ")
+  port = input("Port number of Git HTTP-server (not sure what this is? ask your admin): ")
   cwd = os.getcwd()
   try:
     error_on_none(pygit2.discover_repository(cwd))
@@ -80,14 +80,14 @@ def init_repository(url=None, only=None, exclude=None):
       # We also create an initial root commit
       git('commit', '--allow-empty', '-m', 'Initialize repository')
 
-      print("Generating DIT settings file for repo...")
+      print("Generating DIT settings file for local repo...")
 
       # new repo state -> need to create an empty permission file for the repo and current user then push that
       repo_name = Path(repo.path).parent.name
-      json_path = str(Constants.CONFIG_PATH) + "/" + repo_name + ".json"
-      Constants.CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+      json_path = str(_config_path) + "/" + repo_name + ".json"
+      Path(_config_path).parent.mkdir(parents=True, exist_ok=True)
 
-      if Constants.CONFIG_PATH.exists():
+      if Path(_config_path).exists():
         if Path(json_path).exists():
           with Path(json_path).open("r", encoding='utf-8') as f:
             data = json.load(f)
@@ -104,7 +104,7 @@ def init_repository(url=None, only=None, exclude=None):
         repo = {"repo_name": repo_name, "users": []}
         data["settings"].append(repo)
 
-      for u in repo["users"]:
+      for u in data["settings"][0]["users"]:
         if u.get("username") == Constants.username:
           u["account_type"] = Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
           break
@@ -119,7 +119,7 @@ def init_repository(url=None, only=None, exclude=None):
       with Path(json_path).open("w", encoding='utf-8') as f:
         json.dump(data, f, indent=2, sort_keys=True)
 
-      with Path(repo.path.parent + "/../.git/{repo_name}.json").open("w", encoding='utf-8') as f:
+      with Path(repo.path + f"/../.git/dit_config.json").open("w", encoding='utf-8') as f:
         info = {"this_user":{"username": Constants.username, "account_type": Constants.Access_Type.NEW.Serialise(Constants.access_level)}, "this_machine":{"CONFIG_PATH": _config_path, "CONFIG_PATH_REPO_URL":_config_url}, "this_server":{"ip":server, "port":port }}
         json.dump(info, f, indent=2, sort_keys=True)
 
@@ -154,7 +154,7 @@ def init_repository(url=None, only=None, exclude=None):
     print("Generating DIT settings file for repo...")
 
     # new repo state -> need to create an empty permission file for the repo and current user then push that
-    repo_name = Path(repo.path).parent.name
+    repo_name = Path(repo.path).parent.with_name
     json_path = str(Constants.CONFIG_PATH) + "/" + repo_name + ".json"
     Constants.CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 

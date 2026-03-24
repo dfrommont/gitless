@@ -67,16 +67,19 @@ def print_help(parser):
       for choice in subparsers_action._choices_actions:
           print('    {:<19} {}'.format(choice.dest, choice.help))
   pprint.sep()
-  try:
-    with Path(str(Constants.CONFIG_PATH) + "/" + os.path.basename(repo.root)+".json").open("r", encoding="utf-8") as f:
-      d = json.load(f)
-      try:
-        w = d["settings"][0]["workflow"]
-        print(f"Workflow designated by Admin:\n{w}")
-      except Exception:
-        pprint("Your admin hasn't designated as workflow description. This is key for advising New or Novice users on how to proceed about using the system.")
-  except (FileNotFoundError):
-    pprint.err("Could not locate your shared config file")
+  if not repo:
+    pprint.err("Cannot show repo-specific information as you are not in a known gitless repo")
+  else:
+    try:
+      with Path(str(Constants.CONFIG_PATH) + "/" + os.path.basename(repo.root)+".json").open("r", encoding="utf-8") as f:
+        d = json.load(f)
+        try:
+          w = d["settings"][0]["workflow"]
+          print(f"Workflow designated by Admin:\n{w}")
+        except Exception:
+          pprint("Your admin hasn't designated as workflow description. This is key for advising New or Novice users on how to proceed about using the system.")
+    except (FileNotFoundError):
+      pprint.err("Could not locate your shared config file")
 
 def build_parser(subcommands, repo):
   l = ""
@@ -88,10 +91,16 @@ def build_parser(subcommands, repo):
               l = l + u.get("username") + " - " + Constants.Access_Type.Parse(u.get("account_type")) + "\n"
     except AttributeError:
       pprint.err("...")
-  parser = argparse.ArgumentParser(
-      description=(
-          f'Gitless: a version control system built on top of Git.\nMore info, downloads and documentation at {URL}\n\n################################################################################\nWho has access to this repo?\n{l}\n################################################################################\n'),
-      formatter_class=argparse.RawDescriptionHelpFormatter)
+  if repo:
+    parser = argparse.ArgumentParser(
+        description=(
+            f'Gitless: a version control system built on top of Git.\nMore info, downloads and documentation at {URL}\n\n################################################################################\nWho has access to this repo?\n{l}\n################################################################################\n'),
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+  else:
+        parser = argparse.ArgumentParser(
+        description=(
+            f'Gitless: a version control system built on top of Git.\nMore info, downloads and documentation at {URL}\n\n'),
+        formatter_class=argparse.RawDescriptionHelpFormatter)
   if sys.version_info[0] < 3:
       parser.register('action', 'parsers', helpers.AliasedSubParsersAction)
   parser.add_argument(

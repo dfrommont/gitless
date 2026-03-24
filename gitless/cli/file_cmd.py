@@ -30,17 +30,12 @@ def parser(help_msg, subcmd, subcmd_aliases=[]):
 
 def main(subcmd):
   def f(args, repo):
-    if core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NEW:
-      if core.Constants.verbose_conf_dialog(repo.current_branch, subcmd, args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream.name):
-          pprint.ok("Command confirmed, continuing...")
-      else:
-          pprint.err("Command aborted, ending...")
-      return False
 
     curr_b = repo.current_branch
     success = True
 
     for fp in args.files:
+      print("there are files")
       try:
         getattr(curr_b, subcmd + '_file')(fp)
         pprint.ok(
