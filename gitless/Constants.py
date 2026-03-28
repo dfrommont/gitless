@@ -3,8 +3,14 @@ from enum import Enum
 import subprocess
 import datetime
 import sys
+import os
 
-CONFIG_PATH = "" #Set by local config.json in .../.git
+CONFIG_PATH = str(os.path.expanduser("~"))+"/.config/Dit2.0_Config"
+if not Path(CONFIG_PATH).exists():
+  try:
+    Path(CONFIG_PATH).mkdir()
+  except Exception as e:
+     print(f"Failed to make config folder: {e}")
 CONFIG_PATH_REPO_URL = "" #Set by local config.json in .../.git
 
 RED = '\033[31m'
@@ -212,7 +218,7 @@ def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
         speech.append(s + f"{', '.join(args.include)}\n" if args.include else "")
     case "fuse":
       speech.append("Fuse the divergent changes of a branch onto the current branch. By default all divergent changes from the given source branch are fused. To customize the set of commits to fuse use the only and exclude flags\n")
-      if args.src: speech.append(f"Source branch: {args.src} -> {"This branch will be used to merge in to the current branch ({branch_name})" if args.src else "You haven't given a source branch so {upstream} will be used"}\n")
+      if args.src: speech.append(f"Source branch: {args.src} -> {"This branch will be used to merge in to the current branch ({branch_name})" if args.src else "You have not given a source branch so {upstream} will be used"}\n")
       if args.only: 
         s = f"-o or --only {args.only} -> Fuse only these given commits: "
         speech.append(s + f"{', '.join(args.only)}\n" if args.only else "")

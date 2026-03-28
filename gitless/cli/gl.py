@@ -89,8 +89,8 @@ def build_parser(subcommands, repo):
           data = json.load(f)
           for u in data["settings"][0]["users"]:
               l = l + u.get("username") + " - " + Constants.Access_Type.Parse(u.get("account_type")) + "\n"
-    except AttributeError:
-      pprint.err("...")
+    except Exception:
+      pprint.err("This repository is missing some key files for dfrommont's version of Gitless..., it may need to be reinitialised")
   if repo:
     parser = argparse.ArgumentParser(
         description=(
@@ -146,8 +146,8 @@ def main():
       Constants.access_level = Constants.Access_Type.Parse(u.get("account_type"))
       Constants.CONFIG_PATH = m.get("CONFIG_PATH")
       Constants.CONFIG_PATH_REPO_URL = m.get("CONFIG_PATH_REPO_URL")
-  except AttributeError:
-    pprint.err("Checking if you are in a Gitless repo...")
+  except Exception:
+    pprint.err("This repository is missing some key files for dfrommont's version of Gitless..., it may need to be reinitialised")
     
   sub_cmds = [
       gl_track, gl_untrack, gl_status, gl_diff, gl_commit, gl_branch, gl_tag,

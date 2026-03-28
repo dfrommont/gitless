@@ -66,14 +66,15 @@ def init_repository(url=None, only=None, exclude=None):
       consistent of all branches not in this set
   """
   Constants.username = input("Username: ")
-  _config_path = input("Local path to config folder: ")
-  _config_url = input("Git url of config folder: ")
+  _config_url = input("Git url of config folder (Leave blank for the default url): ")
+  if _config_url == "":
+    _config_url = "https://github.com/dfrommont/Dit2.0_Config"
   server = input("IP of Git HTTP-server (not sure what this is? ask your admin): ")
   port = input("Port number of Git HTTP-server (not sure what this is? ask your admin): ")
   cwd = os.getcwd()
   try:
     error_on_none(pygit2.discover_repository(cwd))
-    raise GlError('You are already in a Gitless repository')
+    raise GlError("You are already in a pre-dfrommont's Gitless repository, try reinitialising this repo")
   except KeyError:  # Expected
     if not url:
       repo = pygit2.init_repository(cwd)
@@ -84,10 +85,10 @@ def init_repository(url=None, only=None, exclude=None):
 
       # new repo state -> need to create an empty permission file for the repo and current user then push that
       repo_name = Path(repo.path).parent.name
-      json_path = str(_config_path) + "/" + repo_name + ".json"
-      Path(_config_path).parent.mkdir(parents=True, exist_ok=True)
+      json_path = str(Constants.CONFIG_PATH) + "/" + repo_name + ".json"
+      Path(Constants.CONFIG_PATH).parent.mkdir(parents=True, exist_ok=True)
 
-      if Path(_config_path).exists():
+      if Path(Constants.CONFIG_PATH).exists():
         if Path(json_path).exists():
           with Path(json_path).open("r", encoding='utf-8') as f:
             data = json.load(f)
@@ -120,10 +121,9 @@ def init_repository(url=None, only=None, exclude=None):
         json.dump(data, f, indent=2, sort_keys=True)
 
       with Path(repo.path + f"/../.git/dit_config.json").open("w", encoding='utf-8') as f:
-        info = {"this_user":{"username": Constants.username, "account_type": Constants.Access_Type.NEW.Serialise(Constants.access_level)}, "this_machine":{"CONFIG_PATH": _config_path, "CONFIG_PATH_REPO_URL":_config_url}, "this_server":{"ip":server, "port":port }}
+        info = {"this_user":{"username": Constants.username, "account_type": Constants.Access_Type.NEW.Serialise(Constants.access_level)}, "this_machine":{"CONFIG_PATH": Constants.CONFIG_PATH, "CONFIG_PATH_REPO_URL":_config_url}, "this_server":{"ip":server, "port":port }}
         json.dump(info, f, indent=2, sort_keys=True)
 
-      Constants.CONFIG_PATH = _config_path
       Constants.CONFIG_PATH_REPO_URL = _config_url
 
       print(f"...Done and available at: {json_path}")
@@ -198,10 +198,9 @@ def init_repository(url=None, only=None, exclude=None):
 
     config_path = str(Path(repo.path).parent) + "/.git/dit_config.json"
     with Path(config_path).open("w", encoding='utf-8') as f:
-      info = {"this_user":{"username": Constants.username, "account_type": Constants.Access_Type.NEW.Serialise(Constants.access_level)}, "this_machine":{"CONFIG_PATH": _config_path, "CONFIG_PATH_REPO_URL":_config_url}}
+      info = {"this_user":{"username": Constants.username, "account_type": Constants.Access_Type.NEW.Serialise(Constants.access_level)}, "this_machine":{"CONFIG_PATH": Constants.CONFIG_PATH, "CONFIG_PATH_REPO_URL":_config_url}}
       json.dump(info, f, indent=2, sort_keys=True)
       
-    Constants.CONFIG_PATH = _config_path
     Constants.CONFIG_PATH_REPO_URL = _config_url
 
     print(f"...Done and available at: {json_path}")
