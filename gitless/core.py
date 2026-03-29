@@ -102,15 +102,15 @@ def init_repository(url=None, only=None, exclude=None):
         if r.get("repo_name") == repo_name:
           break
       else:
-        repo = {"repo_name": repo_name, "users": []}
-        data["settings"].append(repo)
+        repo_json = {"repo_name": repo_name, "users": []}
+        data["settings"].append(repo_json)
 
       for u in data["settings"][0]["users"]:
         if u.get("username") == Constants.username:
           u["account_type"] = Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
           break
       else:
-        repo["users"].append(
+        repo_json["users"].append(
           {
             "username": Constants.username,
             "account_type": Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
