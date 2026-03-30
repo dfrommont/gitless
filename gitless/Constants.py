@@ -103,7 +103,7 @@ def _run(cmd, cwd=None, capture=False):
   )
 
 def sync_repo_permissions(file_name: str) -> bool:
-    if not Path(CONFIG_PATH).exists() or not Path(CONFIG_PATH).is_dir():
+    if not Path(CONFIG_PATH+"/.git").exists() or not Path(CONFIG_PATH+"/.git").is_dir():
         print(f"Config path {CONFIG_PATH} does not exist or is not a directory!")
 
         if not run(f"git clone {CONFIG_PATH_REPO_URL} \"{CONFIG_PATH}\"", cwd=None, capture=True):
