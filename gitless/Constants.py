@@ -6,11 +6,6 @@ import sys
 import os
 
 CONFIG_PATH = str(os.path.expanduser("~"))+"/.config/Dit2.0_Config"
-if not Path(CONFIG_PATH).exists():
-  try:
-    Path(CONFIG_PATH).mkdir()
-  except Exception as e:
-     print(f"Failed to make config folder: {e}")
 CONFIG_PATH_REPO_URL = "" #Set by local config.json in .../.git
 
 RED = '\033[31m'

@@ -147,7 +147,7 @@ def main():
       Constants.CONFIG_PATH = m.get("CONFIG_PATH")
       Constants.CONFIG_PATH_REPO_URL = m.get("CONFIG_PATH_REPO_URL")
   except Exception:
-    pprint.err("This repository is missing some key files for dfrommont's version of Gitless..., it may need to be reinitialised")
+    pprint.err("This repository is missing.../.git/dit_config.json, it may need to be reinitialised")
     
   sub_cmds = [
       gl_track, gl_untrack, gl_status, gl_diff, gl_commit, gl_branch, gl_tag,
