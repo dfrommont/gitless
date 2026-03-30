@@ -67,7 +67,8 @@ setup(
     install_requires=[
       # make sure install_requires is consistent with requirements.txt
       'pygit2>=1.4.0', # requires libgit2 1.1.x
-      'argcomplete>=1.11.1'
+      'argcomplete>=1.11.1',
+      'requests>=2.0.0'
     ],
     license='MIT',
     classifiers=[
