@@ -109,6 +109,10 @@ def sync_repo_permissions(file_name: str) -> bool:
     if not run("sudo git fetch --quiet", cwd=CONFIG_PATH, capture=True):
         print("Failed to fetch updates for config repository!")
         return False
+    
+    if file_name == "":
+       print("aborting after clone/fetch for blank file name/initial call")
+       return False
 
     result = subprocess.run(
         f"git status --porcelain {file_name}",
