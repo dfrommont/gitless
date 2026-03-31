@@ -81,7 +81,7 @@ def init_repository(url=None, only=None, exclude=None):
       # We also create an initial root commit
       git('commit', '--allow-empty', '-m', 'Initialize repository')
 
-      print("Generating DIT settings file for local repo...")
+      print("\nGenerating DIT settings file for local repo...")
 
       # new repo state -> need to create an empty permission file for the repo and current user then push that
       repo_name = Path(repo.path).parent.name
