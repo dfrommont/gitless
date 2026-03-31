@@ -69,6 +69,7 @@ def init_repository(url=None, only=None, exclude=None):
   _config_url = input("Git url of config folder (Leave blank for the default url): ")
   if _config_url == "":
     _config_url = "https://github.com/dfrommont/Dit2.0_Config"
+  Constants.CONFIG_PATH_REPO_URL = _config_url
   server = input("IP of Git HTTP-server (not sure what this is? ask your admin): ")
   port = input("Port number of Git HTTP-server (not sure what this is? ask your admin): ")
   cwd = os.getcwd()
@@ -76,7 +77,7 @@ def init_repository(url=None, only=None, exclude=None):
     error_on_none(pygit2.discover_repository(cwd))
     raise GlError("You are already in a pre-dfrommont's Gitless repository, try reinitialising this repo")
   except KeyError:  # Expected
-    Constants.sync_repo_permissions()
+    Constants.sync_repo_permissions("")
     print("Done initial commit at start of init_repository")
 
     if not url:
@@ -126,8 +127,6 @@ def init_repository(url=None, only=None, exclude=None):
       with Path(repo.path + f"/../.git/dit_config.json").open("w", encoding='utf-8') as f:
         info = {"this_user":{"username": Constants.username, "account_type": Constants.Access_Type.NEW.Serialise(Constants.access_level)}, "this_machine":{"CONFIG_PATH": Constants.CONFIG_PATH, "CONFIG_PATH_REPO_URL":_config_url}, "this_server":{"ip":server, "port":port }}
         json.dump(info, f, indent=2, sort_keys=True)
-
-      Constants.CONFIG_PATH_REPO_URL = _config_url
 
       print(f"...Done and available at: {json_path}")
       Constants.sync_repo_permissions(repo_name + ".json")
