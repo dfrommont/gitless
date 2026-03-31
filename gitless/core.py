@@ -76,6 +76,8 @@ def init_repository(url=None, only=None, exclude=None):
     error_on_none(pygit2.discover_repository(cwd))
     raise GlError("You are already in a pre-dfrommont's Gitless repository, try reinitialising this repo")
   except KeyError:  # Expected
+    Constants.sync_repo_permissions()
+
     if not url:
       repo = pygit2.init_repository(cwd)
       # We also create an initial root commit

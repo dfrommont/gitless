@@ -77,6 +77,7 @@ class Access_Type(Enum):
 access_level = Access_Type.NONE
 
 def run(cmd, cwd=None, capture=False):
+  print(f"Running: {cmd}")
   result = subprocess.run(
     cmd,
     cwd=cwd,
@@ -99,7 +100,7 @@ def _run(cmd, cwd=None, capture=False):
 
 def sync_repo_permissions(file_name: str) -> bool:
     if not Path(CONFIG_PATH+"/.git").exists() or not Path(CONFIG_PATH+"/.git").is_dir():
-        print(f"Config path {CONFIG_PATH} does not exist or is not a directory!")
+        print(f"Config path {CONFIG_PATH}/.git does not exist or is not a directory!")
 
         if not run(f"sudo git clone {CONFIG_PATH_REPO_URL} \"{CONFIG_PATH}\"", cwd=None, capture=True):
             print("Failed to clone config repository!")
