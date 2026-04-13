@@ -298,7 +298,7 @@ class Repository(object):
     tagger = self.git_repo.default_signature
     try:
       self.git_repo.create_tag(
-          name, commit.id, pygit2.GIT_OBJ_COMMIT, tagger, "")
+          name, commit.id, pygit2.GIT_OBJECT_COMMIT, tagger, "")
       return Tag(name, commit)
     except ValueError as e:
       raise ValueError(
@@ -679,7 +679,7 @@ class Remote(object):
 
     regex = re.compile(r'(.*)\trefs/tags/.*')
     commit_id = regex.match(tag_info).group(1)
-    commit = self.gl_repo.git_repo.get(commit_id).peel(pygit2.GIT_OBJ_COMMIT)
+    commit = self.gl_repo.git_repo.get(commit_id).peel(pygit2.GIT_OBJECT_COMMIT)
 
     return RemoteTag(self.git_remote.name, tag_name, commit)
 
@@ -1022,10 +1022,10 @@ class Branch(object):
 
     git_path = _get_git_path(path)
     o = self.gl_repo.git_repo[commit.tree[git_path].id]
-    assert o.type != pygit2.GIT_OBJ_COMMIT
-    assert o.type != pygit2.GIT_OBJ_TAG
+    assert o.type != pygit2.GIT_OBJECT_COMMIT
+    assert o.type != pygit2.GIT_OBJECT_TAG
 
-    if o.type == pygit2.GIT_OBJ_BLOB:
+    if o.type == pygit2.GIT_OBJECT_BLOB:
       full_path = os.path.join(self.gl_repo.root, path)
       dirname = os.path.dirname(full_path)
       if not os.path.exists(dirname):
@@ -1046,7 +1046,7 @@ class Branch(object):
       with self._index as index:
         index.add(git_path)
 
-    elif o.type == pygit2.GIT_OBJ_TREE:
+    elif o.type == pygit2.GIT_OBJECT_TREE:
         raise PathIsDirectoryError(
           'Path {0} at {1} is a directory and not a file'.format(
               path, commit.id))
@@ -1059,7 +1059,7 @@ class Branch(object):
 
     git_path = _get_git_path(path)
     tree = self.gl_repo.git_repo[commit.tree[git_path].id]
-    assert tree.type == pygit2.GIT_OBJ_TREE
+    assert tree.type == pygit2.GIT_OBJECT_TREE
 
     for tree_entry in tree:
       tree_entry_path = os.path.join(path, tree_entry.name)
