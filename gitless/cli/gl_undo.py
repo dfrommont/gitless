@@ -33,7 +33,7 @@ def main(args, repo):
     #an undo should query the git state for committed local changes on the current branch
     #if these changes exist, it must backtrack through them up until the LIMIT or the last commit to be pushed (whichever comes first)
 
-    if core.Constants.verbose_conf_dialog(repo.current_branch, "undo", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream.name):
+    if core.Constants.verbose_conf_dialog(repo.current_branch, "undo", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream.name if repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream else "NO_UPSTREAM"):
         pprint.ok("Command confirmed, continuing...")
     else:
         pprint.err("Command aborted, ending...")
@@ -49,18 +49,21 @@ def main(args, repo):
         count = count + 1
 
         if not Path(repo.root + "/.git").exists():
-            print("Not in a git repository!")
+            pprint("Not in a git repository!")
             return False
         
         head = Constants._run("git rev-parse HEAD", repo.root, capture=True)
         if head.returncode != 0:
-            print("No commits exist!")
+            pprint("No commits exist!")
             return False
         
         parents = Constants._run("git rev-list --parents -n 1 HEAD", repo.root, capture=True)
         p = parents.stdout.strip().split()
-        if len(p) != 2:
-            print("Cannot undo merge commits")
+        if len(p) < 2:
+            pprint("Cannot undo the initial commit")
+            return False
+        if len(p) > 2:
+            pprint("Cannot undo a merging or branching commit")
             return False
         
         upstream = Constants._run("git rev-parse --abbrev-ref --symbolic-full-name @{u}", repo.root, capture=True)
@@ -68,17 +71,17 @@ def main(args, repo):
             counts = Constants._run("git rev-list --left-right --count HEAD...@{u}", repo.root, capture=True)
 
             if counts.returncode != 0:
-                print("Failed to determine sync state")
+                pprint("Failed to determine sync state")
                 return False
             ahead, behind = map(int, counts.stdout.strip().split())
 
             if ahead == 0:
-                print("Commit has already been pushed, undo not allowed")
+                pprint("Commit has already been pushed, undo not allowed")
                 return False
             
         reset = Constants._run("git reset --mixed HEAD~1", repo.root, capture=True)
         if reset.returncode != 0:
-            print("Failed to undo commit")
+            pprint("Failed to undo commit")
             return False
         if limit > 1:
             pprint.ok("Undo successful; continuing to next")

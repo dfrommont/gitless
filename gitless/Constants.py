@@ -77,7 +77,6 @@ class Access_Type(Enum):
 access_level = Access_Type.NONE
 
 def run(cmd, cwd=None, capture=False):
-  print(f"Running: {cmd}")
   result = subprocess.run(
     cmd,
     cwd=cwd,
@@ -331,4 +330,5 @@ def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
          
   print('{0} -> Do you wish to continue? (y/N)'.format(cmd_type))
   user_input = input()
+  print('\n################################################################################')
   return user_input and user_input[0].lower() == 'y'
