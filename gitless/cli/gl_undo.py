@@ -33,7 +33,7 @@ def main(args, repo):
     #an undo should query the git state for committed local changes on the current branch
     #if these changes exist, it must backtrack through them up until the LIMIT or the last commit to be pushed (whichever comes first)
 
-    if core.Constants.verbose_conf_dialog(repo.current_branch, "undo", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream.name if repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream else "NO_UPSTREAM"):
+    if core.Constants.verbose_conf_dialog(repo.current_branch, "undo", args, core.Constants.try_get_upstream(repo, core.pygit2.GIT_BRANCH_LOCAL)):
         pprint.ok("Command confirmed, continuing...")
     else:
         pprint.err("Command aborted, ending...")

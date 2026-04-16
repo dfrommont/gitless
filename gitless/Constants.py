@@ -5,6 +5,8 @@ import datetime
 import sys
 import os
 
+testing = True
+
 CONFIG_PATH = str(os.path.expanduser("~"))+"/.config/Dit2.0_Config"
 CONFIG_PATH_REPO_URL = "" #Set by local config.json in .../.git
 
@@ -168,6 +170,8 @@ def sync_repo_permissions(file_name: str) -> bool:
     return True
 
 def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
+  if testing:
+     return True
   print('\n################################################################################')
   speech = []
   match cmd_type:
@@ -332,3 +336,20 @@ def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
   user_input = input()
   print('\n################################################################################')
   return user_input and user_input[0].lower() == 'y'
+
+def try_get_upstream(repo, local):
+  #local -> core.pygit2.GIT_BRANCH_LOCAL
+  r = repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, local)
+  u, n = "", ""
+  try:
+    u = r.upstream
+    try:
+      n = u.name
+    except:
+      n = ""
+  except:
+    u = ""
+  if u == "" or n == "":
+    return "NO_UPSTREAM"
+  else:
+    return n

@@ -65,13 +65,19 @@ def init_repository(url=None, only=None, exclude=None):
     exclude: if given, and only is not given, this local repository will
       consistent of all branches not in this set
   """
-  Constants.username = input("Username: ")
-  _config_url = input("Git url of config folder (Leave blank for the default url): ")
-  if _config_url == "":
+  if Constants.testing:
+    Constants.username = "Test Module"
     _config_url = "https://github.com/dfrommont/Dit2.0_Config"
+    server = "127.0.0.1"
+    port = "8080"
+  else:
+    Constants.username = input("Username: ")
+    _config_url = input("Git url of config folder (Leave blank for the default url): ")
+    server = input("IP of Git HTTP-server (not sure what this is? ask your admin): ")
+    port = input("Port number of Git HTTP-server (not sure what this is? ask your admin): ")
+    if _config_url == "":
+      _config_url = "https://github.com/dfrommont/Dit2.0_Config"
   Constants.CONFIG_PATH_REPO_URL = _config_url
-  server = input("IP of Git HTTP-server (not sure what this is? ask your admin): ")
-  port = input("Port number of Git HTTP-server (not sure what this is? ask your admin): ")
   cwd = os.getcwd()
   try:
     error_on_none(pygit2.discover_repository(cwd))
@@ -1150,7 +1156,7 @@ class Branch(object):
       using_tmp = True
     with io.open(path, mode='w', encoding=ENCODING) as f:
       for ci in commits:
-        f.write(ci.id.hex + '\n')
+        f.write(str(ci.id) + '\n')
     if using_tmp:
       shutil.move(path, self._fuse_commits_fp)
 
@@ -1276,7 +1282,7 @@ class Branch(object):
       raise GlError('No fuse in progress, nothing to abort')
     git_repo = self.gl_repo.git_repo
     git_repo.set_head(git_repo.lookup_reference('GL_FUSE_ORIG_HEAD').target)
-    git_repo.reset(git_repo.head.peel().hex, pygit2.GIT_RESET_HARD)
+    git_repo.reset(git_repo.head.peel().id, pygit2.GIT_RESET_HARD)
 
     self._state_cleanup()
     restore_fn = op_cb.restore_ok if op_cb else None

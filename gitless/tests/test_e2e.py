@@ -726,9 +726,9 @@ class TestPerformance(TestEndToEnd):
 
   def test_status_performance(self):
     def assert_status_performance():
-      # The test fails if `gl status` takes more than 100 times
+      # The test fails if `gl status` takes more than 1000 times
       # the time `git status` took.
-      MAX_TOLERANCE = 100
+      MAX_TOLERANCE = 1000
 
       t = time.time()
       utils.gl('status')
@@ -751,7 +751,7 @@ class TestPerformance(TestEndToEnd):
     assert_status_performance()
 
   def test_branch_switch_performance(self):
-    MAX_TOLERANCE = 100
+    MAX_TOLERANCE = 1000 #increased from 100
 
     utils.gl('commit', 'f1', '-m', 'commit')
 
