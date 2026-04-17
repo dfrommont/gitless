@@ -9,8 +9,6 @@ import os
 import json
 from pathlib import Path
 
-from gitless import core
-
 from . import helpers, pprint
 
 
@@ -53,8 +51,9 @@ def main(args, repo):
             name = "README.txt"
         else:
             pprint.err("You have no locatable readme at your project root, it is highly recommended you create this")
+            name = ""
 
-        if name: 
+        if name != "": 
             with Path(str(Path(repo.root))+"/"+name).open("r", encoding='utf-8') as f:
                 pprint.ok(f.read())
     
@@ -88,13 +87,13 @@ def main(args, repo):
             w = d["settings"][0]["workflow"]
             print(f"Workflow designated by Admin:\n{w}")
         except Exception:
-            pprint("Your admin hasn't designated as workflow description. This is key for advising New or Novice users on how to proceed about using the system.")
+            pprint.err("Your admin hasn't designated as workflow description. This is key for advising New or Novice users on how to proceed about using the system.")
     except (FileNotFoundError):
         pprint.err("Could not locate your shared config file")
 
     pprint.sep()
 
-    print(Constants._run("git status -v", repo.root, capture=True).stdout)
+    pprint.ok(Constants._run("git status -v", repo.root, capture=True).stdout)
 
     pprint.sep()
 

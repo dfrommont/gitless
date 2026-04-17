@@ -11,6 +11,7 @@ import re
 import time
 from subprocess import CalledProcessError
 import sys
+from .. import Constants
 
 from gitless.tests import utils
 
@@ -773,3 +774,27 @@ class TestPerformance(TestEndToEnd):
     self.assertTrue(
         gl_t < git_t*MAX_TOLERANCE,
         msg='gl_t {0}, git_t {1}'.format(gl_t, git_t))
+
+class TestHome(TestEndToEnd):
+  def setUp(self):
+    return super().setUp()
+  
+  def test_home(self):
+    def assert_repo_included(returned_string):
+      repo_included = bool(re.search("\S?\s?(Repo: )\s?\S?", returned_string))
+      self.assertTrue(repo_included)
+    def assert_current_branch_included(returned_string):
+      current_branch_included = bool(re.search("\S?\s?(Current branch: )\s?\S?", returned_string))
+      self.assertTrue(current_branch_included)
+    def assert_name_included(returned_string):
+      current_name_included = bool(re.search("\S?\s?(You are user: )\s?\S?", returned_string))
+      self.assertTrue(current_name_included)
+    def assert_status_included(returned_string):
+      current_status_included = bool(re.search("((On branch )\S)?(Your branch is up to date with )?(commit)+", returned_string))
+      self.assertTrue(current_status_included)
+
+    returned_string = utils.gl('home', cwd=self.path)
+    assert_repo_included(returned_string)
+    assert_current_branch_included(returned_string)
+    assert_name_included(returned_string)
+    assert_status_included(returned_string)

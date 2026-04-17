@@ -193,7 +193,7 @@ def main():
   except CalledProcessError as e:
     pprint.err(e.stderr)
     return ERRORS_FOUND
-  except:
+  except Exception as e:
     pprint.err('Some internal error occurred')
     pprint.err_exp(
         'If you want to help, see {0} for info on how to report bugs and '
