@@ -120,4 +120,4 @@ Documentation
 Contribute
 ----------
 
-This fork is not open for public contributions. [If you want to support Gitless, visit the Gitless project](https://github.com/gitless-vcs/gitless) on GitHub or [follow their page](http://gitless.com "Gitless's website")
+This fork is not open for public contributions. If you want to support Gitless, [visit the Gitless project](https://github.com/gitless-vcs/gitless) on GitHub or [follow their page](http://gitless.com "Gitless's website")
