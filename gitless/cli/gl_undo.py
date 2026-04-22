@@ -49,21 +49,35 @@ def main(args, repo):
         count = count + 1
 
         if not Path(repo.root + "/.git").exists():
-            pprint("Not in a git repository!")
+            pprint.err("Not in a git repository!")
             return False
         
         head = Constants._run("git rev-parse HEAD", repo.root, capture=True)
         if head.returncode != 0:
-            pprint("No commits exist!")
+            pprint.err("No commits exist!")
             return False
         
         parents = Constants._run("git rev-list --parents -n 1 HEAD", repo.root, capture=True)
         p = parents.stdout.strip().split()
         if len(p) < 2:
-            pprint("Cannot undo the initial commit")
+            pprint.err("Cannot undo the initial commit")
             return False
         if len(p) > 2:
-            pprint("Cannot undo a merging or branching commit")
+            pprint.err("Cannot undo a merging commit")
+            return False
+
+        children = Constants._run("git rev-list --all --children", repo.root, capture=True)
+        branches = []
+        c = children.stdout.strip().splitlines()
+        for l in c:
+            h = l.split()
+            commit = h[0]
+            children = h[1:]
+
+            if len(children) > 1:
+                branches.append(commit)
+        if len(branches) > 1:
+            pprint.err("Cannot undo a branching commit")
             return False
         
         upstream = Constants._run("git rev-parse --abbrev-ref --symbolic-full-name @{u}", repo.root, capture=True)
@@ -71,17 +85,17 @@ def main(args, repo):
             counts = Constants._run("git rev-list --left-right --count HEAD...@{u}", repo.root, capture=True)
 
             if counts.returncode != 0:
-                pprint("Failed to determine sync state")
+                pprint.err("Failed to determine sync state")
                 return False
             ahead, behind = map(int, counts.stdout.strip().split())
 
             if ahead == 0:
-                pprint("Commit has already been pushed, undo not allowed")
+                pprint.err("Commit has already been pushed, undo not allowed")
                 return False
             
         reset = Constants._run("git reset --mixed HEAD~1", repo.root, capture=True)
         if reset.returncode != 0:
-            pprint("Failed to undo commit")
+            pprint.err("Failed to undo commit")
             return False
         if limit > 1:
             pprint.ok("Undo successful; continuing to next")

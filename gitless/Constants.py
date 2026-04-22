@@ -45,6 +45,17 @@ class Access_Type(Enum):
       return Access_Type.EXPERT
     else:
       return Access_Type.NONE 
+  
+  @staticmethod
+  def ParseStrToInt(t: str) -> int:
+    if t == "New" or t == "NEW" or t == "new":
+      return 1
+    elif t == "Novice" or t == "novice" or t == "NOVICE":
+      return 2
+    elif t == "Expert" or t == "expert" or t == "EXPERT":
+      return 3
+    else:
+      return 0
     
   @staticmethod 
   def ParseInt(i: int) -> "Access_Type":

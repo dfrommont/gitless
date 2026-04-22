@@ -67,10 +67,11 @@ def main(args, repo):
                 to_add = list(set(creds) - set(users))
                 print(to_add)
                 for username, access_level in to_add:
+                    print("Added test with access: ", access_level, " as int ", core.Constants.Access_Type.ParseStrToInt(access_level))
                     r["users"].append(
                         {
                             "username": username,
-                            "account_type": Constants.Access_Type.Serialise(access_level)
+                            "account_type": core.Constants.Access_Type.ParseStrToInt(access_level)
                         }
                     )
                     pprint.ok(f"Added user {username} to the repository with access level {access_level}")
@@ -84,8 +85,8 @@ def main(args, repo):
                             if isinstance(new_level, int):
                                 user["account_type"] = new_level
                             else:
-                                user["account_type"] = Constants.Access_Type.Serialise(new_level)
-                            pprint.ok(f"Amended user {username} in the repository to have new access level {Constants.Access_Type.Serialise(access_level)}")
+                                user["account_type"] = Constants.Access_Type.ParseStrToInt(new_level)
+                            pprint.ok(f"Amended user {username} in the repository to have new access level {new_level}")
 
             if args.delete:
                 delete = frozenset(args.delete)
