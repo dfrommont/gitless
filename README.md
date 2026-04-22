@@ -1,4 +1,4 @@
-This is a fork of the Gitless project, aiming to improve on the work of the many Gitless contributors by adding the following new features: an undo command, tie-in API to another project (start pending completeion of this) to create "runnable" repositories using DevOps tools and a tie-in API to DIT - This authors ongoign project creating a wrapper application controlling automated permission workflows and accessibility modes over Gitless through a wrapper application.
+This is a fork of the Gitless project, aiming to improve on this work by adding new features like an undo command and greater support among users and has been created as part of a dissertation project by the author whilst at the University of Sussex (UK). For more details on this work, contact the author for a copy of the paper.
 
 Gitless
 =======
@@ -52,7 +52,7 @@ If for some reason this doesn't work (maybe you are running an old version of
 your OS?), try one of the other options (installing from source or via
 the Python Package Index).
 
-### Installing from source
+### Installing from source (Recommended)
 
 To install from source you need to have Python 3.7+ installed.
 
@@ -62,7 +62,7 @@ http://www.pygit2.org/install.html "pygit2 install").
 Then, [download the source code tarball](http://gitless.com "Gitless's website")
 and do:
 
-    $ ./setup.py install
+    $ apt-get install .
 
 
 ### Installing via the Python Package Index
@@ -120,24 +120,4 @@ Documentation
 Contribute
 ----------
 
-If you find a bug, create an issue in our
-GitHub repository. If you'd like to contribute
-code, here are some useful things to know:
-
-- To install gitless for development, [install pygit2](
-  http://www.pygit2.org/install.html "pygit2 install"), clone the repo,
-  `cd` to the repo root and do `./setup.py develop`. This will install
-  the `gl` command with a symlink to your source files. You can make
-  changes to your code and run `gl` to test them.
-- We follow, to some extent, the [Google Python Style Guide](
-    https://google.github.io/styleguide/pyguide.html
-    "Google Python Style Guide").
-Before submitting code, take a few seconds to look at the style guide and the
-Gitless code so that your edits are consistent with the codebase.
-
-- Finally, if you don't want [Travis](
-    https://travis-ci.org/gitless-vcs/gitless "Travis") to
-be mad at you, check that tests pass in Python 3.7+. Tests can be run with:
-  ```
-  python -m unittest discover gitless/tests
-  ```
+This fork is not open for public contributions. [If you want to support Gitless, visit the Gitless project](https://github.com/gitless-vcs/gitless) on GitHub or [follow their page](http://gitless.com "Gitless's website")
