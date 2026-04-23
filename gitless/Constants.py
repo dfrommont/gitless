@@ -5,6 +5,8 @@ import datetime
 import sys
 import os
 
+testing = True
+
 CONFIG_PATH = str(os.path.expanduser("~"))+"/.config/Dit2.0_Config"
 CONFIG_PATH_REPO_URL = "" #Set by local config.json in .../.git
 
@@ -43,6 +45,17 @@ class Access_Type(Enum):
       return Access_Type.EXPERT
     else:
       return Access_Type.NONE 
+  
+  @staticmethod
+  def ParseStrToInt(t: str) -> int:
+    if t == "New" or t == "NEW" or t == "new":
+      return 1
+    elif t == "Novice" or t == "novice" or t == "NOVICE":
+      return 2
+    elif t == "Expert" or t == "expert" or t == "EXPERT":
+      return 3
+    else:
+      return 0
     
   @staticmethod 
   def ParseInt(i: int) -> "Access_Type":
@@ -77,7 +90,6 @@ class Access_Type(Enum):
 access_level = Access_Type.NONE
 
 def run(cmd, cwd=None, capture=False):
-  print(f"Running: {cmd}")
   result = subprocess.run(
     cmd,
     cwd=cwd,
@@ -169,6 +181,8 @@ def sync_repo_permissions(file_name: str) -> bool:
     return True
 
 def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
+  if testing:
+     return True
   print('\n################################################################################')
   speech = []
   match cmd_type:
@@ -331,4 +345,22 @@ def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
          
   print('{0} -> Do you wish to continue? (y/N)'.format(cmd_type))
   user_input = input()
+  print('\n################################################################################')
   return user_input and user_input[0].lower() == 'y'
+
+def try_get_upstream(repo, local):
+  #local -> core.pygit2.GIT_BRANCH_LOCAL
+  r = repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, local)
+  u, n = "", ""
+  try:
+    u = r.upstream
+    try:
+      n = u.name
+    except:
+      n = ""
+  except:
+    u = ""
+  if u == "" or n == "":
+    return "NO_UPSTREAM"
+  else:
+    return n

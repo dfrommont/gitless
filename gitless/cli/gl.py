@@ -167,7 +167,7 @@ def main():
       permission_file_name = os.path.basename(repo.root)+".json"
       if not Constants.sync_repo_permissions(permission_file_name):
         print("The repo failed to update it's permissions from the config server!")
-        quit()
+        #quit()
       else:
         Constants.access_level = verify_access(str(Constants.CONFIG_PATH)+ "/" + permission_file_name, os.path.basename(repo.root), Constants.username)
         if Constants.access_level == Constants.Access_Type.NONE:
@@ -193,7 +193,7 @@ def main():
   except CalledProcessError as e:
     pprint.err(e.stderr)
     return ERRORS_FOUND
-  except:
+  except Exception as e:
     pprint.err('Some internal error occurred')
     pprint.err_exp(
         'If you want to help, see {0} for info on how to report bugs and '

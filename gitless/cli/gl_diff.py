@@ -8,7 +8,7 @@
 import os
 import tempfile
 import pygit2
-from .. import Constants
+from .. import core
 
 from . import helpers, pprint
 
@@ -30,8 +30,8 @@ def main(args, repo):
   if not files:
     pprint.warn('No files to diff')
   
-  if Constants.Access_Type.ParseStr(Constants.access_level) == Constants.Access_Type.NEW:
-    if Constants.verbose_conf_dialog(repo.current_branch, "diff", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, pygit2.GIT_BRANCH_LOCAL).upstream.name):
+  if core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NEW:
+    if core.Constants.verbose_conf_dialog(repo.current_branch, "diff", args, core.Constants.try_get_upstream(repo, core.pygit2.GIT_BRANCH_LOCAL)):
       pprint.ok("Command confirmed, continuing...")
     else:
       pprint.err("Command aborted, ending...")

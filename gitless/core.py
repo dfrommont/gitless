@@ -65,13 +65,19 @@ def init_repository(url=None, only=None, exclude=None):
     exclude: if given, and only is not given, this local repository will
       consistent of all branches not in this set
   """
-  Constants.username = input("Username: ")
-  _config_url = input("Git url of config folder (Leave blank for the default url): ")
-  if _config_url == "":
+  if Constants.testing:
+    Constants.username = "Test Module"
     _config_url = "https://github.com/dfrommont/Dit2.0_Config"
+    server = "127.0.0.1"
+    port = "8080"
+  else:
+    Constants.username = input("Username: ")
+    _config_url = input("Git url of config folder (Leave blank for the default url): ")
+    server = input("IP of Git HTTP-server (not sure what this is? ask your admin): ")
+    port = input("Port number of Git HTTP-server (not sure what this is? ask your admin): ")
+    if _config_url == "":
+      _config_url = "https://github.com/dfrommont/Dit2.0_Config"
   Constants.CONFIG_PATH_REPO_URL = _config_url
-  server = input("IP of Git HTTP-server (not sure what this is? ask your admin): ")
-  port = input("Port number of Git HTTP-server (not sure what this is? ask your admin): ")
   cwd = os.getcwd()
   try:
     error_on_none(pygit2.discover_repository(cwd))
@@ -298,7 +304,7 @@ class Repository(object):
     tagger = self.git_repo.default_signature
     try:
       self.git_repo.create_tag(
-          name, commit.id, pygit2.GIT_OBJ_COMMIT, tagger, "")
+          name, commit.id, pygit2.GIT_OBJECT_COMMIT, tagger, "")
       return Tag(name, commit)
     except ValueError as e:
       raise ValueError(
@@ -679,7 +685,7 @@ class Remote(object):
 
     regex = re.compile(r'(.*)\trefs/tags/.*')
     commit_id = regex.match(tag_info).group(1)
-    commit = self.gl_repo.git_repo.get(commit_id).peel(pygit2.GIT_OBJ_COMMIT)
+    commit = self.gl_repo.git_repo.get(commit_id).peel(pygit2.GIT_OBJECT_COMMIT)
 
     return RemoteTag(self.git_remote.name, tag_name, commit)
 
@@ -1022,10 +1028,10 @@ class Branch(object):
 
     git_path = _get_git_path(path)
     o = self.gl_repo.git_repo[commit.tree[git_path].id]
-    assert o.type != pygit2.GIT_OBJ_COMMIT
-    assert o.type != pygit2.GIT_OBJ_TAG
+    assert o.type != pygit2.GIT_OBJECT_COMMIT
+    assert o.type != pygit2.GIT_OBJECT_TAG
 
-    if o.type == pygit2.GIT_OBJ_BLOB:
+    if o.type == pygit2.GIT_OBJECT_BLOB:
       full_path = os.path.join(self.gl_repo.root, path)
       dirname = os.path.dirname(full_path)
       if not os.path.exists(dirname):
@@ -1046,7 +1052,7 @@ class Branch(object):
       with self._index as index:
         index.add(git_path)
 
-    elif o.type == pygit2.GIT_OBJ_TREE:
+    elif o.type == pygit2.GIT_OBJECT_TREE:
         raise PathIsDirectoryError(
           'Path {0} at {1} is a directory and not a file'.format(
               path, commit.id))
@@ -1059,7 +1065,7 @@ class Branch(object):
 
     git_path = _get_git_path(path)
     tree = self.gl_repo.git_repo[commit.tree[git_path].id]
-    assert tree.type == pygit2.GIT_OBJ_TREE
+    assert tree.type == pygit2.GIT_OBJECT_TREE
 
     for tree_entry in tree:
       tree_entry_path = os.path.join(path, tree_entry.name)
@@ -1150,7 +1156,7 @@ class Branch(object):
       using_tmp = True
     with io.open(path, mode='w', encoding=ENCODING) as f:
       for ci in commits:
-        f.write(ci.id.hex + '\n')
+        f.write(str(ci.id) + '\n')
     if using_tmp:
       shutil.move(path, self._fuse_commits_fp)
 
@@ -1276,7 +1282,7 @@ class Branch(object):
       raise GlError('No fuse in progress, nothing to abort')
     git_repo = self.gl_repo.git_repo
     git_repo.set_head(git_repo.lookup_reference('GL_FUSE_ORIG_HEAD').target)
-    git_repo.reset(git_repo.head.peel().hex, pygit2.GIT_RESET_HARD)
+    git_repo.reset(git_repo.head.peel().id, pygit2.GIT_RESET_HARD)
 
     self._state_cleanup()
     restore_fn = op_cb.restore_ok if op_cb else None

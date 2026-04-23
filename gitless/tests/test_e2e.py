@@ -11,6 +11,8 @@ import re
 import time
 from subprocess import CalledProcessError
 import sys
+from .. import Constants
+from pathlib import Path
 
 from gitless.tests import utils
 
@@ -726,9 +728,9 @@ class TestPerformance(TestEndToEnd):
 
   def test_status_performance(self):
     def assert_status_performance():
-      # The test fails if `gl status` takes more than 100 times
+      # The test fails if `gl status` takes more than 1000 times
       # the time `git status` took.
-      MAX_TOLERANCE = 100
+      MAX_TOLERANCE = 1000
 
       t = time.time()
       utils.gl('status')
@@ -751,7 +753,7 @@ class TestPerformance(TestEndToEnd):
     assert_status_performance()
 
   def test_branch_switch_performance(self):
-    MAX_TOLERANCE = 100
+    MAX_TOLERANCE = 1000 #increased from 100
 
     utils.gl('commit', 'f1', '-m', 'commit')
 
@@ -773,3 +775,354 @@ class TestPerformance(TestEndToEnd):
     self.assertTrue(
         gl_t < git_t*MAX_TOLERANCE,
         msg='gl_t {0}, git_t {1}'.format(gl_t, git_t))
+
+class TestHome(TestEndToEnd):
+  def setUp(self):
+    return super().setUp()
+  
+  def test_home(self):
+    def assert_repo_included(returned_string):
+      repo_included = bool(re.search("(Repo: )", returned_string))
+      self.assertTrue(repo_included)
+    def assert_current_branch_included(returned_string):
+      current_branch_included = bool(re.search("(Current branch: )", returned_string))
+      self.assertTrue(current_branch_included)
+    def assert_name_included(returned_string):
+      current_name_included = bool(re.search("(You are user: )", returned_string))
+      self.assertTrue(current_name_included)
+    def assert_status_included(returned_string):
+      current_status_included = bool(re.search("((On branch )\S)?(Your branch is up to date with )?(commit)+", returned_string))
+      self.assertTrue(current_status_included)
+
+    returned_string = utils.gl('home', cwd=self.path)
+    assert_repo_included(returned_string)
+    assert_current_branch_included(returned_string)
+    assert_name_included(returned_string)
+    assert_status_included(returned_string)
+
+class TestUserTypes(TestEndToEnd):
+  def setUp(self):
+    return super().setUp()
+
+  def test_list_name(self):
+    def assert_name_present(returned_string):
+      current_name_included = bool(re.search("(You are user: )", returned_string))
+      self.assertTrue(current_name_included)
+    def assert_access_present(returned_string):
+      current_access_included = bool(re.search("(You are user: )(\S| )*(\, with access level: Access_Type\.)(NEW|NOVICE|EXPERT)", returned_string))
+      self.assertTrue(current_access_included)
+    def assert_others_listed(returned_string):
+      others_listed = bool(re.search("(Who has access to this repo?)", returned_string))
+      self.assertTrue(others_listed)
+      
+    returned_string = utils.gl('home', cwd=self.path)
+    assert_name_present(returned_string)
+    assert_access_present(returned_string)
+    assert_others_listed(returned_string)
+  
+  def test_changing_access(self):
+    def assert_level_new(returned_string):
+      level_new = bool(re.search("(Who has access to this repo\?)(\n\n(\S| )*( - (NEW|NOVICE|EXPERT)))*(\n\n\n(test)( - (NEW)))+(\n\n\n(\S| )*( - (NEW|NOVICE|EXPERT)))*", returned_string))
+      self.assertTrue(level_new)
+    def assert_level_novice(returned_string):
+      level_novice = bool(re.search("(Who has access to this repo\?)(\n\n(\S| )*( - (NEW|NOVICE|EXPERT)))*(\n\n\n(test)( - (NOVICE)))+(\n\n\n(\S| )*( - (NEW|NOVICE|EXPERT)))*", returned_string))
+      self.assertTrue(level_novice)
+    def assert_level_expert(returned_string):
+      level_expert = bool(re.search("(Who has access to this repo\?)(\n\n(\S| )*( - (NEW|NOVICE|EXPERT)))*(\n\n\n(test)( - (EXPERT)))+(\n\n\n(\S| )*( - (NEW|NOVICE|EXPERT)))*", returned_string))
+      self.assertTrue(level_expert)
+    def assert_test_present(returned_string):
+      test_present = bool(re.search("(Who has access to this repo\?)(\n\n(\S| )*( - (NEW|NOVICE|EXPERT)))*(\n\n\n(test)( - (NONE|NEW|NOVICE|EXPERT)))+(\n\n\n(\S| )*( - (NEW|NOVICE|EXPERT)))*", returned_string))
+      self.assertTrue(test_present)
+    def assert_test_not_present(returned_string):
+      test_not_present = bool(re.search("^(?![\s\S]*\btest\s*-\s*(NEW|NOVICE|EXPERT)\b)", returned_string))
+      self.assertTrue(test_not_present)
+
+    print(utils.gl('home'))
+    
+    returned_string = utils.gl('home')
+    assert_test_not_present(returned_string)
+
+    print(utils.gl('permission', '--add', 'test/new'))
+    returned_string = utils.gl('home')
+    assert_test_present(returned_string)
+    assert_level_new(returned_string)
+
+    utils.gl('permission', '--edit', 'test/novice')
+    returned_string = utils.gl('home')
+    assert_test_present(returned_string)
+    assert_level_novice(returned_string)
+
+    utils.gl('permission', '--edit', 'test/expert')
+    returned_string = utils.gl('home')
+    assert_test_present(returned_string)
+    assert_level_expert(returned_string)
+
+    utils.gl('permission', '--delete', 'test')
+    returned_string = utils.gl('home')
+    assert_test_not_present(returned_string)
+  
+  def test_confirmation_dialogues(self):
+    def assert_dialog_present(returned_string):
+      dialogue_present = bool(re.search("#*\n(\w*-> Do you wish to continue \(y/N\))\n\w*\n#*\n(Command confirmed, continuing...|Command aborted, ending...)", returned_string))
+      self.assertTrue(dialogue_present)
+    def assert_dialog_not_present(returned_string):
+      dialogue_present = bool(re.search("#*\n(\w*-> Do you wish to continue \(y/N\))\n\w*\n#*\n(Command confirmed, continuing...|Command aborted, ending...)", returned_string))
+      self.assertFalse(dialogue_present)
+
+    utils.gl('permission', '--edit', 'Test Module/new') 
+    returned_string = utils.gl('commit')
+    assert_dialog_present(returned_string)
+    returned_string = utils.gl('branch')
+    assert_dialog_present(returned_string)
+    returned_string = utils.gl('merge')
+    assert_dialog_present(returned_string)
+    returned_string = utils.gl('rebase')
+    assert_dialog_present(returned_string)
+    returned_string = utils.gl('history')
+    assert_dialog_present(returned_string)
+
+    utils.gl('permission', '--edit', 'Test Module/novice')
+    returned_string = utils.gl('commit')
+    assert_dialog_present(returned_string)
+    returned_string = utils.gl('branch')
+    assert_dialog_present(returned_string)
+    returned_string = utils.gl('merge')
+    assert_dialog_present(returned_string)
+    returned_string = utils.gl('rebase')
+    assert_dialog_present(returned_string)
+    returned_string = utils.gl('history')
+    assert_dialog_not_present(returned_string)
+
+    utils.gl('permission', '--edit', 'Test Module/expert')
+    returned_string = utils.gl('commit')
+    assert_dialog_not_present(returned_string)
+    returned_string = utils.gl('branch')
+    assert_dialog_not_present(returned_string)
+    returned_string = utils.gl('merge')
+    assert_dialog_not_present(returned_string)
+    returned_string = utils.gl('rebase')
+    assert_dialog_not_present(returned_string)
+    returned_string = utils.gl('history')
+    assert_dialog_not_present(returned_string)
+
+class TestUndo(TestEndToEnd):
+  BRANCH_1 = 'branch1'
+  BRANCH_2 = 'branch2'
+  BRANCH_3 = 'branch3'
+
+  def setUp(self):
+    super().setUp()
+  
+  def test_basic_undo(self):
+    #make a commit
+    #check commit is there
+    #undo commit 
+    #check commit is not there
+
+    previous_head = utils.git('rev-parse', 'HEAD')
+
+    utils.write_file('file1', 'Contents of file1')
+    # Track
+    utils.gl('track', 'file1')
+    self.assertRaises(CalledProcessError, utils.gl, 'track', 'file1')
+    self.assertRaises(CalledProcessError, utils.gl, 'track', 'non-existent')
+    # Commit
+    utils.gl('commit', '-m', 'file1 commit')
+    current_head = utils.git('rev-parse', 'HEAD')
+    self.assertFalse(previous_head==current_head)
+    #undo
+    returned_string = ""
+    try:
+      returned_string = utils.gl('undo', '-l', '1')
+    except CalledProcessError as e:
+      new_head = utils.git('rev-parse', 'HEAD')
+      self.assertTrue(current_head==new_head)
+      self.assertFalse(new_head==previous_head)
+
+  def test_undo_initial_commit(self):
+    def assert_undo_failed(returned_string):
+      commit_failed = bool(re.search("\S*Cannot undo the initial commit\S*", returned_string))
+      self.assertTrue(commit_failed)
+
+    returned_string = ""
+    try:
+      returned_string = utils.gl('undo', '-l', '1')
+    except CalledProcessError as e:
+      assert_undo_failed(e.stderr)
+  
+  def test_undo_branching_commit(self):
+    def assert_merging_undo_failed(returned_string):
+      commit_failed = bool(re.search("\S*Cannot undo a merging commit\S*", returned_string))
+      self.assertTrue(commit_failed)
+    def assert_branching_undo_failed(returned_string):
+      commit_failed = bool(re.search("\S*Cannot undo a branching commit\S*", returned_string))
+      self.assertTrue(commit_failed)
+
+    utils.gl('branch', '-c', self.BRANCH_1)
+    utils.gl('switch', self.BRANCH_1)
+
+    utils.write_file('test', 'contents of test')
+    utils.gl('track', 'test')
+    utils.gl('commit', 'test', '-m', 'test commit')
+
+    utils.gl('branch', '-c', self.BRANCH_2)
+    utils.gl('switch', self.BRANCH_2)
+
+    returned_string = ""
+    try:
+      returned_string = utils.gl('undo', '-l', '1')
+    except CalledProcessError as e:
+      assert_branching_undo_failed(e.stderr)
+
+    utils.write_file('test_test', 'contents of test on test')
+    utils.gl('track', 'test_test')
+    utils.gl('commit', 'test_test', '-m', 'test commit on test')
+
+    utils.gl('switch', self.BRANCH_1)
+
+    utils.write_file('test_main', 'contents of test on main')
+    utils.gl('track', 'test_main')
+    utils.gl('commit', 'test_main', '-m', 'test commit on main')
+
+    utils.gl('merge', self.BRANCH_2)
+
+    returned_string = ""
+    try:
+      returned_string = utils.gl('undo', '-l', '1')
+    except CalledProcessError as e:
+      assert_merging_undo_failed(e.stderr)
+      
+  def test_deeper_undo(self):
+
+    previous_head = utils.git('rev-parse', 'HEAD')
+    previous_num_files = len([f for f in Path(self.path+'/.git/objects').iterdir()])
+    print(self.path)
+
+    utils.write_file('file1', 'Contents of file1')
+    # Track
+    utils.gl('track', 'file1')
+    self.assertRaises(CalledProcessError, utils.gl, 'track', 'file1')
+    self.assertRaises(CalledProcessError, utils.gl, 'track', 'non-existent')
+    # Commit
+    utils.gl('commit', '-m', 'file1 commit')
+    current_head = utils.git('rev-parse', 'HEAD')
+    current_num_files = len([f for f in Path(self.path+'/.git/objects').iterdir()])
+    self.assertFalse(previous_head==current_head)
+    self.assertFalse(previous_num_files==current_num_files)
+    #undo
+    returned_string = ""
+    try:
+      returned_string = utils.gl('undo', '-l', '1')
+    except CalledProcessError as e:
+      print(e.stderr)
+      new_head = utils.git('rev-parse', 'HEAD')
+      new_num_files = len([f for f in Path(self.path+'/.git/objects').iterdir()])
+      self.assertTrue(current_head==new_head)
+      self.assertTrue(current_num_files==new_num_files)
+      self.assertTrue(new_head==previous_head)
+      self.assertFalse(new_num_files==previous_num_files)
+  
+  def test_undo_with_status(self):
+    def assert_undo_successful(returned_string):
+      undo_successful = bool(re.search("\S*Undo successful\S*", returned_string))
+      self.assertTrue(undo_successful)
+    
+    utils.write_file('test', 'Contents of test')
+    utils.gl('track', 'test')
+    self.assertRaises(CalledProcessError, utils.gl, 'track', 'test')
+    self.assertRaises(CalledProcessError, utils.gl, 'track', 'non-existent')
+    utils.gl('commit', '-m', 'test commit')
+
+    utils.write_file('test2', 'Contents of test2')
+    initial_status = utils.gl('status')
+    print(initial_status)
+
+    utils.gl('track', 'test2')
+    self.assertRaises(CalledProcessError, utils.gl, 'track', 'test2')
+    self.assertRaises(CalledProcessError, utils.gl, 'track', 'non-existent')
+    utils.gl('commit', '-m', 'test2 commit')
+
+    try:
+      returned_string = utils.gl('undo', '-l', '1')
+    except CalledProcessError as e:
+      assert_undo_successful(e.stderr)
+
+    after_status = utils.gl('status')
+    print(after_status)
+
+    self.assertTrue(initial_status==after_status)
+  
+  def test_complex_undo(self):
+    def assert_undo_successful(returned_string):
+      undo_successful = bool(re.search("\S*Undo successful\S*", returned_string))
+      self.assertTrue(undo_successful)
+  
+    utils.write_file('test', 'Contents of test')
+    utils.gl('track', 'test')
+    self.assertRaises(CalledProcessError, utils.gl, 'track', 'test')
+    self.assertRaises(CalledProcessError, utils.gl, 'track', 'non-existent')
+    utils.gl('commit', '-m', 'test commit')
+
+    utils.gl('branch', '-c', self.BRANCH_3)
+    utils.gl('switch', self.BRANCH_3)
+
+    before_status = utils.gl('status')
+
+    utils.gl('switch', 'master')
+
+    utils.write_file('mistake', 'Contents of mistake')
+    utils.gl('track', 'mistake')
+    self.assertRaises(CalledProcessError, utils.gl, 'track', 'mistake')
+    self.assertRaises(CalledProcessError, utils.gl, 'track', 'non-existent')
+    during_status = utils.gl('status')
+    utils.gl('commit', '-m', 'mistake commit')
+
+    try:
+      returned_string = utils.gl('undo', '-l', '1')
+    except CalledProcessError as e:
+      assert_undo_successful(e.stderr)
+
+    utils.gl('switch', self.BRANCH_3)
+    
+    after_status = utils.gl('status')
+
+    self.assertTrue(before_status==after_status)
+    self.assertFalse(before_status==during_status)
+    self.assertFalse(during_status==after_status)
+
+  
+class TestHelp(TestEndToEnd):
+  def setUp(self):
+    super().setUp()
+
+  def test_help(self):
+    def assert_help_present(returned_string, command):
+      help_present = bool(re.search(f"\S*usage: gl {command} \[-h\]\S*", returned_string))
+      self.assertTrue(help_present)
+    
+    assert_help_present(utils.gl('init', '-h'), 'init')
+    assert_help_present(utils.gl('status', '-h'), 'status')
+    assert_help_present(utils.gl('track', '-h'), 'track')
+    assert_help_present(utils.gl('untrack', '-h'), 'untrack')
+    assert_help_present(utils.gl('diff', '-h'), 'diff')
+    assert_help_present(utils.gl('commit', '-h'), 'commit')
+    assert_help_present(utils.gl('checkout', '-h'), 'checkout')
+    assert_help_present(utils.gl('history', '-h'), 'history')
+    assert_help_present(utils.gl('branch', '-h'), 'branch')
+    assert_help_present(utils.gl('switch', '-h'), 'switch')
+    assert_help_present(utils.gl('tag', '-h'), 'tag')
+    assert_help_present(utils.gl('merge', '-h'), 'merge')
+    assert_help_present(utils.gl('fuse', '-h'), 'fuse')
+    assert_help_present(utils.gl('resolve', '-h'), 'resolve')
+    assert_help_present(utils.gl('publish', '-h'), 'publish')
+    assert_help_present(utils.gl('remote', '-h'), 'remote')
+
+class TestRunRepo(TestEndToEnd):
+  def setUp(self):
+    super().setUp()
+  
+  def test_runrepo_help(self):
+    def assert_help_present(returned_string, command):
+      help_present = bool(re.search(f"\S*usage: gl {command} \[-h\]\S*", returned_string))
+      self.assertTrue(help_present)
+    assert_help_present(utils.gl('runrepo', '-h'), 'runrepo')

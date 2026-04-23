@@ -64,7 +64,6 @@ def parser(subparsers, _):
 
 
 def main(args, repo):
-  print("brnahc was called")
   is_list = bool(args.verbose or args.remote)
   is_create = bool(args.create_b or args.dp)
   is_delete = bool(args.delete_b)
@@ -76,8 +75,8 @@ def main(args, repo):
         'Can only do one of list, create, delete, or edit branches at a time')
     return False
   
-  if core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NEW:
-    if core.Constants.verbose_conf_dialog(repo.current_branch, "branch", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream.name):
+  if core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NEW or core.Constants.Access_Type.ParseStr(core.Constants.access_level) == core.Constants.Access_Type.NOVICE:
+    if core.Constants.verbose_conf_dialog(repo.current_branch, "branch", args, repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream.name if repo.git_repo.lookup_branch(repo.git_repo.head.shorthand, core.pygit2.GIT_BRANCH_LOCAL).upstream else "NO_UPSTREAM"):
       pprint.ok("Command confirmed, continuing...")
     else:
       pprint.err("Command aborted, ending...")
