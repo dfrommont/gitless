@@ -13,6 +13,7 @@ from subprocess import CalledProcessError
 import sys
 from .. import Constants
 from pathlib import Path
+import json
 
 from gitless.tests import utils
 
@@ -868,6 +869,27 @@ class TestUserTypes(TestEndToEnd):
     def assert_dialog_not_present(returned_string):
       dialogue_present = bool(re.search("#*\n(\w*-> Do you wish to continue \(y/N\))\n\w*\n#*\n(Command confirmed, continuing...|Command aborted, ending...)", returned_string))
       self.assertFalse(dialogue_present)
+    def assert_track_dialog(returned_string):
+      dialogue_present = bool(re.search("\S*Start tracking changes to the following file(s):\S*", returned_string))
+      files_present = bool(re.search("\S*test_1\S*test_2\S*test_3\S*", returned_string))
+      self.asserTrue(dialogue_present)
+      self.asserTrue(files_present)
+    def assert_commit_dialog(returned_string):
+      dialogue_present = bool(re.search("\S*You are making a commit - Save changes to the local repository.\S*", returned_string))
+      include_present = bool(re.search("\S*Include the following file(s) from the commit:\S*test_1\S*", returned_string))
+      exclude_present = bool(re.search("\S*Exclude the following file(s) from the commit:\S*test_2\S*test_3\S*", returned_string))
+      self.assertTrue(dialogue_present)
+      self.assertTrue(include_present)
+      self.assertTrue(exclude_present)
+
+    #more complex dialog check
+    utils.write_file('test_1', 'test_1')
+    utils.write_file('test_2', 'test_2')
+    utils.write_file('test_3', 'test_3')
+    assert_track_dialog(utils.gl('track', '.'))
+
+    assert_commit_dialog(utils.gl('commit', '-m', '"testing the commit message"', '--include', 'test_1', '--exclude', 'test_2', 'test_3'))
+
 
     utils.gl('permission', '--edit', 'Test Module/new') 
     returned_string = utils.gl('commit')
@@ -904,6 +926,16 @@ class TestUserTypes(TestEndToEnd):
     assert_dialog_not_present(returned_string)
     returned_string = utils.gl('history')
     assert_dialog_not_present(returned_string)
+  
+  def test_config_file(self):
+    #test module name is Test Module
+    with Path(self.path + "/dit_config.json").open("r", encoding='utf-8') as f:
+      d = json.load(f)
+      u = d["this_user"]
+      username = u.get("username")
+      access_level = Constants.Access_Type.Parse(u.get("account_type"))
+      self.assertTrue(username == "Test Module")
+      self.assertTrue(access_level = "NEW")
 
 class TestUndo(TestEndToEnd):
   BRANCH_1 = 'branch1'

@@ -219,7 +219,7 @@ def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
         s = f"-e or --exclude {args.delete_b} -> Exclude the following file(s) from the commit: "
         speech.append(s + f"{', '.join(args.exclude)}\n" if args.exclude else "")
       if args.include:
-        s = f"-e or --exclude {args.delete_b} -> Include the following file(s) from the commit: "
+        s = f"-i or --include {args.delete_b} -> Include the following file(s) from the commit: "
         speech.append(s + f"{', '.join(args.include)}\n" if args.include else "")
     case "diff":
       speech.append("You are attempting to view changes made to files\n")
