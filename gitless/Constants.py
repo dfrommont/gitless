@@ -338,6 +338,16 @@ def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
     case "untrack":
         s = "Stop tracking changes to the following file(s)"
         speech.append(s + f"{", ".join(args.files) if args.files else ""}\n")
+    case "runrepo":
+      s = "Send request to your Server to start, query or end running of a repository"
+      if args.abort:
+        speech.append("-a or --abort -> You included the abort tag, this takes priority over any other arguments and will abort any of you running tasks")
+      if args.query:
+        speech.append("-q or --query -> This will return the staus of your running task on the server")
+      if args.commit:
+        speech.append("-c or --commit -> This is the commit ID of the commit to be run (repo also required for run request)")
+      if args.repo:
+        speech.append("-r or --repo -> This is the target repo for the commit ID to be run (repo also required for run request)")
     case _:
         err("Some internal error occurred, confirm dialog was called on an unknown command!\n")
 

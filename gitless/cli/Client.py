@@ -3,10 +3,12 @@ import json
 import hmac
 import hashlib
 import time
+from . import pprint
 
 SECRET_KEY = b"your_secret_key"
 
 def run(server: str, port: int, repo: str, commit: str, name: str) -> str:
+    pprint.ok(f"Sending run request to {server}:{port}")
     payload = {
         "repo": repo,
         "commit": commit,
@@ -31,9 +33,11 @@ def run(server: str, port: int, repo: str, commit: str, name: str) -> str:
             "X-Client-ID": name
         }
     )
+    pprint.ok("Received response from server")
     return response
     
 def query(server: str, port: int, name: str) -> str:
+    pprint.ok(f"Sending query request to {server}:{port}")
     timestamp = str(int(time.time()))
 
     signature = hmac.new(
@@ -51,7 +55,11 @@ def query(server: str, port: int, name: str) -> str:
         }
     )
 
+    pprint.ok("Received response from server")
+    return response
+
 def abort(server: str, port: int, name: str) -> str:
+    pprint.ok(f"Sending abort request to {server}:{port}")
     timestamp = str(int(time.time()))
 
     signature = hmac.new(
@@ -69,4 +77,5 @@ def abort(server: str, port: int, name: str) -> str:
         }
     )
 
+    pprint.ok("Received response from server")
     return response.json()
