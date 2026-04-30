@@ -35,7 +35,6 @@ def main(subcmd):
     success = True
 
     for fp in args.files:
-      print("there are files")
       try:
         getattr(curr_b, subcmd + '_file')(fp)
         pprint.ok(

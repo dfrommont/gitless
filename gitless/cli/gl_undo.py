@@ -92,6 +92,7 @@ def main(args, repo):
             if ahead == 0:
                 pprint.err("Commit has already been pushed, undo not allowed")
                 return False
+        pprint.ok("Commit has remained local, will now attempt the undo")
             
         reset = Constants._run("git reset --mixed HEAD~1", repo.root, capture=True)
         if reset.returncode != 0:

@@ -5,7 +5,7 @@ import datetime
 import sys
 import os
 
-testing = True
+testing = False
 
 CONFIG_PATH = str(os.path.expanduser("~"))+"/.config/Dit2.0_Config"
 CONFIG_PATH_REPO_URL = "" #Set by local config.json in .../.git
@@ -338,6 +338,16 @@ def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
     case "untrack":
         s = "Stop tracking changes to the following file(s)"
         speech.append(s + f"{", ".join(args.files) if args.files else ""}\n")
+    case "runrepo":
+      s = "control repositories running on the server"
+      if args.abort:
+        speech.append("-a or --abort -> You included the abort flag to cancel your running task, this will take priority over any other arguments")
+      if args.query:
+        speech.append("-q or --query -> Unless you included the abort tag, this will fetch the status of your job on the server")
+      if args.commit:
+        speech.append(f"-c or --commit {args.commit} -> You are requesting the server to run this commit (Note a repo name is also required for a run request)")
+      if args.repo:
+        speech.append(f"-r or --repo {args.repo} -> You are requesting the server to find the commit in this repo (Note a commit ID is also required for a run request)")
     case _:
         err("Some internal error occurred, confirm dialog was called on an unknown command!\n")
 
