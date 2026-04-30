@@ -30,9 +30,9 @@ def main(args, repo):
 
     pprint.sep()
 
-    print(f"Repo: {os.path.basename(repo.root)}, Location: {repo.root}")
-    print(f"Current branch: {repo.current_branch}")
-    print(f"Config file location: {str(Constants.CONFIG_PATH) + "/" + repo.root + ".json"}\n")
+    pprint.green(f"Repo: {os.path.basename(repo.root)}, Location: {repo.root}")
+    pprint.green(f"Current branch: {repo.current_branch}")
+    pprint.green(f"Config file location: {str(Constants.CONFIG_PATH) + "/" + repo.root + ".json"}\n")
 
     pprint.sep()
 
@@ -55,11 +55,11 @@ def main(args, repo):
 
         if name != "": 
             with Path(str(Path(repo.root))+"/"+name).open("r", encoding='utf-8') as f:
-                pprint.ok(f.read())
+                pprint.yellow(f.read())
     
     pprint.sep()
 
-    print("Who has access to this repo?\n")
+    pprint.green("Who has access to this repo?\n")
 
     repo_name = os.path.basename(repo.root)
     json_path = str(Constants.CONFIG_PATH) + "/" + repo_name + ".json"
@@ -69,14 +69,14 @@ def main(args, repo):
         with Path(json_path).open("r", encoding='utf-8') as f:
             data = json.load(f)
             for u in data["settings"][0]["users"]:
-                print(u.get("username") + " - " + Constants.Access_Type.Parse(u.get("account_type")))
-                print("\n")
+                pprint.green(u.get("username") + " - " + Constants.Access_Type.Parse(u.get("account_type")))
+                pprint.green("\n")
     else:
         pprint.err("An error occurred, I could not find your project config file!")
 
     pprint.sep()
 
-    print(f"You are user: {Constants.username}, with access level: {Constants.Access_Type.ParseStr(Constants.access_level)}")
+    pprint.magenta(f"You are user: {Constants.username}, with access level: {Constants.Access_Type.ParseStr(Constants.access_level)}")
 
     pprint.sep()
 
@@ -85,7 +85,7 @@ def main(args, repo):
             d = json.load(f)
         try:
             w = d["settings"][0]["workflow"]
-            print(f"Workflow designated by Admin:\n{w}")
+            pprint.green(f"Workflow designated by Admin:\n{w}")
         except Exception:
             pprint.err("Your admin hasn't designated as workflow description. This is key for advising New or Novice users on how to proceed about using the system.")
     except (FileNotFoundError):
@@ -93,7 +93,7 @@ def main(args, repo):
 
     pprint.sep()
 
-    pprint.ok(Constants._run("git status -v", repo.root, capture=True).stdout)
+    pprint.magenta(Constants._run("git status -v", repo.root, capture=True).stdout)
 
     pprint.sep()
 

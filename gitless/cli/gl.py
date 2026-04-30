@@ -77,7 +77,7 @@ def print_help(parser):
           w = d["settings"][0]["workflow"]
           print(f"Workflow designated by Admin:\n{w}")
         except Exception:
-          pprint("Your admin hasn't designated as workflow description. This is key for advising New or Novice users on how to proceed about using the system.")
+          pprint.warn("Your admin hasn't designated as workflow description. This is key for advising New or Novice users on how to proceed about using the system.")
     except (FileNotFoundError):
       pprint.err("Could not locate your shared config file")
 
@@ -135,19 +135,6 @@ def verify_access(json_path: Path, permission_file_name: str, username: str) -> 
     return Constants.Access_Type.NONE
 
 def main():
-  #grab username from config.json in /.git
-
-  try:
-    with Path(repo.path + "/dit_config.json").open("r", encoding='utf-8') as f:
-      d = json.load(f)
-      u = d["this_user"]
-      m = d["this_machine"]
-      Constants.username = u.get("username")
-      Constants.access_level = Constants.Access_Type.Parse(u.get("account_type"))
-      Constants.CONFIG_PATH = m.get("CONFIG_PATH")
-      Constants.CONFIG_PATH_REPO_URL = m.get("CONFIG_PATH_REPO_URL")
-  except Exception:
-    pprint.err("This repository is missing.../.git/dit_config.json, it may need to be reinitialised")
     
   sub_cmds = [
       gl_track, gl_untrack, gl_status, gl_diff, gl_commit, gl_branch, gl_tag,
@@ -163,15 +150,26 @@ def main():
   args = parser.parse_args()
   try:
     if args.subcmd_name != 'init' and repo:
+      try:
+        with Path(repo.path + "/dit_config.json").open("r", encoding='utf-8') as f:
+          d = json.load(f)
+          u = d["this_user"]
+          m = d["this_machine"]
+          Constants.username = u.get("username")
+          Constants.access_level = Constants.Access_Type.Parse(u.get("account_type"))
+          Constants.CONFIG_PATH = m.get("CONFIG_PATH")
+          Constants.CONFIG_PATH_REPO_URL = m.get("CONFIG_PATH_REPO_URL")
+      except Exception:
+        pprint.err("This repository is missing.../.git/dit_config.json, it may need to be reinitialised")
 
       permission_file_name = os.path.basename(repo.root)+".json"
       if not Constants.sync_repo_permissions(permission_file_name):
-        print("The repo failed to update it's permissions from the config server!")
+        pprint.err("The repo failed to update it's permissions from the config server!")
         #quit()
       else:
         Constants.access_level = verify_access(str(Constants.CONFIG_PATH)+ "/" + permission_file_name, os.path.basename(repo.root), Constants.username)
         if Constants.access_level == Constants.Access_Type.NONE:
-          print("You do not have permission to access this repo!")
+          pprint.err("You do not have permission to access this repo!")
           quit()
     if args.subcmd_name != 'init' and not repo:
       raise core.NotInRepoError('You are not in a Gitless\'s repository')

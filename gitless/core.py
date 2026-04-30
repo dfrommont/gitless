@@ -77,6 +77,7 @@ def init_repository(url=None, only=None, exclude=None):
     port = input("Port number of Git HTTP-server (not sure what this is? ask your admin): ")
     if _config_url == "":
       _config_url = "https://github.com/dfrommont/Dit2.0_Config"
+  print("\n")
   Constants.CONFIG_PATH_REPO_URL = _config_url
   cwd = os.getcwd()
   try:
@@ -108,18 +109,20 @@ def init_repository(url=None, only=None, exclude=None):
         print("Cannot make permission file as your gitless has not yet made contact with your DIT config server!")
         return None
 
+      repo_json = {}
       for r in data["settings"]:
         if r.get("repo_name") == repo_name:
           break
-      else:
-        repo_json = {"repo_name": repo_name, "users": []}
-        data["settings"].append(repo_json)
+
+      repo_json = {"repo_name": repo_name, "users": []}
+      data["settings"].append(repo_json)
 
       for u in data["settings"][0]["users"]:
         if u.get("username") == Constants.username:
           u["account_type"] = Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)
           break
       else:
+        print(repo_json)
         repo_json["users"].append(
           {
             "username": Constants.username,
@@ -131,8 +134,10 @@ def init_repository(url=None, only=None, exclude=None):
         json.dump(data, f, indent=2, sort_keys=True)
 
       with Path(repo.path + f"/../.git/dit_config.json").open("w", encoding='utf-8') as f:
-        info = {"this_user":{"username": Constants.username, "account_type": Constants.Access_Type.NEW.Serialise(Constants.access_level)}, "this_machine":{"CONFIG_PATH": Constants.CONFIG_PATH, "CONFIG_PATH_REPO_URL":_config_url}, "this_server":{"ip":server, "port":port }}
+        info = {"this_user":{"username": Constants.username, "account_type": Constants.Access_Type.NEW.Serialise(Constants.Access_Type.NEW)}, "this_machine":{"CONFIG_PATH": Constants.CONFIG_PATH, "CONFIG_PATH_REPO_URL":_config_url}, "this_server":{"ip":server, "port":port }}
         json.dump(info, f, indent=2, sort_keys=True)
+
+      Constants.access_level = Constants.Access_Type.NEW
 
       print(f"...Done and available at: {json_path}")
       Constants.sync_repo_permissions(repo_name + ".json")
@@ -184,9 +189,9 @@ def init_repository(url=None, only=None, exclude=None):
     for r in data["settings"]:
       if r.get("repo_name") == repo_name:
         break
-    else:
-      r = {"repo_name": repo_name, "users": []}
-      data["settings"].append(r)
+
+    r = {"repo_name": repo_name, "users": []}
+    data["settings"].append(r)
 
     for u in r["users"]:
       if u.get("username") == Constants.username:

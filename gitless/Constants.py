@@ -5,7 +5,7 @@ import datetime
 import sys
 import os
 
-testing = True
+testing = False
 
 CONFIG_PATH = str(os.path.expanduser("~"))+"/.config/Dit2.0_Config"
 CONFIG_PATH_REPO_URL = "" #Set by local config.json in .../.git
@@ -219,7 +219,7 @@ def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
         s = f"-e or --exclude {args.delete_b} -> Exclude the following file(s) from the commit: "
         speech.append(s + f"{', '.join(args.exclude)}\n" if args.exclude else "")
       if args.include:
-        s = f"-e or --exclude {args.delete_b} -> Include the following file(s) from the commit: "
+        s = f"-i or --include {args.delete_b} -> Include the following file(s) from the commit: "
         speech.append(s + f"{', '.join(args.include)}\n" if args.include else "")
     case "diff":
       speech.append("You are attempting to view changes made to files\n")
@@ -339,15 +339,15 @@ def verbose_conf_dialog(branch_name, cmd_type, args, upstream) -> bool:
         s = "Stop tracking changes to the following file(s)"
         speech.append(s + f"{", ".join(args.files) if args.files else ""}\n")
     case "runrepo":
-      s = "Send request to your Server to start, query or end running of a repository"
+      s = "control repositories running on the server"
       if args.abort:
-        speech.append("-a or --abort -> You included the abort tag, this takes priority over any other arguments and will abort any of you running tasks")
+        speech.append("-a or --abort -> You included the abort flag to cancel your running task, this will take priority over any other arguments")
       if args.query:
-        speech.append("-q or --query -> This will return the staus of your running task on the server")
+        speech.append("-q or --query -> Unless you included the abort tag, this will fetch the status of your job on the server")
       if args.commit:
-        speech.append("-c or --commit -> This is the commit ID of the commit to be run (repo also required for run request)")
+        speech.append(f"-c or --commit {args.commit} -> You are requesting the server to run this commit (Note a repo name is also required for a run request)")
       if args.repo:
-        speech.append("-r or --repo -> This is the target repo for the commit ID to be run (repo also required for run request)")
+        speech.append(f"-r or --repo {args.repo} -> You are requesting the server to find the commit in this repo (Note a commit ID is also required for a run request)")
     case _:
         err("Some internal error occurred, confirm dialog was called on an unknown command!\n")
 

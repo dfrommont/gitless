@@ -13,6 +13,7 @@ from subprocess import CalledProcessError
 import sys
 from .. import Constants
 from pathlib import Path
+import json
 
 from gitless.tests import utils
 
@@ -868,6 +869,28 @@ class TestUserTypes(TestEndToEnd):
     def assert_dialog_not_present(returned_string):
       dialogue_present = bool(re.search("#*\n(\w*-> Do you wish to continue \(y/N\))\n\w*\n#*\n(Command confirmed, continuing...|Command aborted, ending...)", returned_string))
       self.assertFalse(dialogue_present)
+    def assert_track_dialog(returned_string):
+      file_1_present = bool(re.search("\S*\n*test_1\S*\n*", returned_string))
+      self.assertTrue(file_1_present)
+      file_2_present = bool(re.search("\S*\n*test_2\S*\n*", returned_string))
+      self.assertTrue(file_2_present)
+      file_3_present = bool(re.search("\S*\n*test_3\S*\n*", returned_string))
+      self.assertTrue(file_3_present)
+    def assert_commit_dialog(returned_string):
+      print(returned_string)
+      dialogue_present = bool(re.search("\S*You are making a commit - Save changes to the local repository.\S*", returned_string))
+      exclude_present = bool(re.search("\S*Exclude the following file(s) from the commit:\S*test_2\S*test_3\S*", returned_string))
+      self.assertTrue(dialogue_present)
+      self.assertTrue(exclude_present)
+
+    #more complex dialog check
+    utils.write_file('test_1', 'test_1')
+    utils.write_file('test_2', 'test_2')
+    utils.write_file('test_3', 'test_3')
+    assert_track_dialog(utils.gl('track', 'test_1', 'test_2', 'test_3'))
+
+    assert_commit_dialog(utils.gl('commit', '-m', '"testing the commit message"', '--exclude', 'test_2', 'test_3'))
+
 
     utils.gl('permission', '--edit', 'Test Module/new') 
     returned_string = utils.gl('commit')
@@ -904,6 +927,18 @@ class TestUserTypes(TestEndToEnd):
     assert_dialog_not_present(returned_string)
     returned_string = utils.gl('history')
     assert_dialog_not_present(returned_string)
+  
+  def test_config_file(self):
+    #test module name is Test Module
+    utils.gl('permission', '--edit', 'Test Module/new')
+    with Path(self.path + "/.git/dit_config.json").open("r", encoding='utf-8') as f:
+      d = json.load(f)
+      u = d["this_user"]
+      username = u.get("username")
+      access_level = Constants.Access_Type.Parse(u.get("account_type"))
+      print(access_level)
+      self.assertTrue(username == "Test Module")
+      self.assertTrue(access_level == "NEW")
 
 class TestUndo(TestEndToEnd):
   BRANCH_1 = 'branch1'
@@ -1125,4 +1160,96 @@ class TestRunRepo(TestEndToEnd):
     def assert_help_present(returned_string, command):
       help_present = bool(re.search(f"\S*usage: gl {command} \[-h\]\S*", returned_string))
       self.assertTrue(help_present)
-    assert_help_present(utils.gl('runrepo', '-h'), 'runrepo')
+    def assert_abort_present(returned_string):
+      abort_present = bool(re.search("\n*\S*-a, --abort\W*Abort your repository currently running\S*\n*", returned_string))
+      self.assertTrue(abort_present)
+    def assert_repo_present(returned_string):
+      repo_present = bool(re.search("\n*\S*-r, --repo REPO\W*Pass repo name that the commit ID will be searched for in to be run\S*\n*", returned_string))
+      self.assertTrue(repo_present)
+    def assert_commit_present(returned_string):
+      commit_present = bool(re.search("\n*\S*-c, --commit COMMIT\W*Pass commit ID to be unpacked and run by the server\S*\n*", returned_string))
+      self.assertTrue(commit_present)
+    def assert_query_present(returned_string):
+      query_present = bool(re.search("\n*\S*-q, --query\W*Query the status of your running job on the server\S*\n*", returned_string))
+      self.assertTrue(query_present)
+    cmd = utils.gl('runrepo', '-h')
+    assert_help_present(cmd, 'runrepo')
+    assert_abort_present(cmd)
+    assert_repo_present(cmd)
+    assert_commit_present(cmd)
+    assert_query_present(cmd)
+
+  def test_config_file(self):
+    with Path(self.path + "/.git/dit_config.json").open("r", encoding='utf-8') as f:
+      d = json.load(f)
+      u = d["this_server"]
+      ip = u.get("ip")
+      port = u.get("port")
+      self.assertTrue(ip == "127.0.0.1")
+      self.assertTrue(port == "8080")
+  
+  def test_run_request(self):
+    def assert_commit_present(returned_string, hash_code):
+      hash_code_present = bool(re.search(f"\S*-c or --commit {hash_code}\S*", returned_string))
+      self.assertTrue(hash_code_present)
+    def assert_repo_present(returned_string, repo_name):
+      repo_name_present = bool(re.search(f"\S*-r or --repo {repo_name}\S*", returned_string))
+      self.assertTrue(repo_name_present)
+
+    utils.write_file('test', 'Contents of test')
+    utils.gl('track', 'test')
+    hash = utils.gl('commit', '-m', '"test"')
+    hash_code = re.search("\S*Commit Id: (.*)\nAuthor\S*", hash).group(1)
+    repo_name = os.path.basename(self.path)
+    cmd = utils.gl('runrepo', '-c', hash_code, '-r', repo_name)
+    print(cmd)
+    assert_commit_present(cmd, hash_code)
+    assert_repo_present(cmd, repo_name)
+  
+  #test 19
+  def test_multiple_run_requests(self):
+    def spawn_process(name):
+      utils.write_file(name, 'print("Hello Server!")')
+      utils.gl('track', name)
+      hash = utils.gl('commit', '-m', f'"{name}"')
+      hash_code = re.search("\S*Commit Id: (.*)\nAuthor\S*", hash).group(1)
+      repo_name = os.path.basename(self.path)
+      cmd = utils.gl('runrepo', '-c', hash_code, '-r', repo_name)
+      print(cmd)
+      ran = bool(re.search("\S*Repository was successfully started\S*", cmd))
+      self.assertTrue(ran)
+    
+    spawn_process("test_1.py")
+    time.sleep(10)
+    spawn_process("test_2.py")
+    time.sleep(10)
+    spawn_process("test_3.py")
+
+  #test 20
+  def test_multiple_run_mixed_requests(self):
+    def assert_run(returned_string):
+      ran = bool(re.search("\S*Hello Server!\S*", returned_string))
+      self.assertTrue(ran)
+    def assert_not_run(returned_string):
+      ran = bool(re.search("\S*Hello Server!\S*", returned_string))
+      self.assertFalse(ran)
+    def spawn_process(name):
+      utils.write_file(name, 'print("Hello Server!")')
+      utils.gl('track', name)
+      hash = utils.gl('commit', '-m', f'"{name}"')
+      hash_code = re.search("\S*Commit Id: (.*)\nAuthor\S*", hash).group(1)
+      repo_name = os.path.basename(self.path)
+      cmd = utils.gl('runrepo', '-c', hash_code, '-r', repo_name)
+      print(cmd)
+      assert_run(cmd)
+    def spawn_infinite_process(name):
+      utils.write_file(name, 'while True: print()')
+      utils.gl('track', name)
+      hash = utils.gl('commit', '-m', f'"{name}"')
+      hash_code = re.search("\S*Commit Id: (.*)\nAuthor\S*", hash).group(1)
+      repo_name = os.path.basename(self.path)
+      cmd = utils.gl('runrepo', '-c', hash_code, '-r', repo_name)
+      assert_not_run(cmd)
+    
+    spawn_process("test_1.py")
+    spawn_infinite_process("test_2.py")

@@ -47,7 +47,6 @@ def main(args, repo):
 
     repo_name = os.path.basename(repo.root)
     json_path = str(Constants.CONFIG_PATH) + "/" + repo_name + ".json"
-    print(json_path)
     Path(Constants.CONFIG_PATH).parent.mkdir(parents=True, exist_ok=True)
 
     if Path(Constants.CONFIG_PATH).exists():
@@ -60,14 +59,10 @@ def main(args, repo):
         if r.get("repo_name") == repo_name:
             if args.add:
                 add = frozenset(args.add)
-                print(add)
                 creds = [tuple(entry.split('/', 1)) for entry in add]
-                print(creds)
                 users = [(u.get("username"), u.get("account_type")) for u in r["users"]]
                 to_add = list(set(creds) - set(users))
-                print(to_add)
                 for username, access_level in to_add:
-                    print("Added test with access: ", access_level, " as int ", core.Constants.Access_Type.ParseStrToInt(access_level))
                     r["users"].append(
                         {
                             "username": username,
@@ -86,7 +81,7 @@ def main(args, repo):
                                 user["account_type"] = new_level
                             else:
                                 user["account_type"] = Constants.Access_Type.ParseStrToInt(new_level)
-                            pprint.ok(f"Amended user {username} in the repository to have new access level {new_level}")
+                            pprint.msg(f"Amended user {username} in the repository to have new access level {new_level}")
 
             if args.delete:
                 delete = frozenset(args.delete)
